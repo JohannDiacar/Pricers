@@ -9,6 +9,5 @@
 
 // ajouter les en-têtes à précompiler ici
 #include "framework.h"
-#include "BrownianMotion.h"
-#include "test.h"
+
 #endif //PCH_H
