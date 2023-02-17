@@ -2,6 +2,7 @@
 #include"cppinterface.h"
 
 #include "..\Pricers\BrownianMotion.h"
+#include "..\Pricers\Payofss.h"
 #pragma warning (disable : 4996)
 
 
@@ -41,15 +42,31 @@ brownianMotion(int number //Number of brownian motion
 
 }
 
-CellMatrix
-Vanilla(std::string type)
+CellMatrix //Coding a Vanilla
+Vanilla(std::string type, int N, double K)
 {
+    
+    CellMatrix Result(N,1);
+    VanillaPayOff* vanille = nullptr; 
+    std::vector <double> result(N);
     if (type == "CALL")
     {
-        
+        VanillaPayOff *vanille = new VanillaPayOff();
+        result = vanille->trace(N, K,2*K);
+        for (int i = 0; i < N; i++)
+        {
+            Result(i, 0) = result[i];
+        }
     }
     else
     {
-
+        VanillaPayOff* vanille = new VanillaPayOff(utils::Put);
+        result = vanille->trace(N, K, 2 * K);
+        for (int i = 0; i < N; i++)
+        {
+            Result(i, 0) = result[i];
+        }
     }
+    delete vanille;
+    return Result;
 }

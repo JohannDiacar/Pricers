@@ -21,4 +21,9 @@ GetRandom(int number //Number of random values
 CellMatrix //Generates a Brownian Motion
 brownianMotion(int number //Number of brownian motion
             );
+
+CellMatrix //Coding a Vanilla
+Vanilla(std::string type,
+        int N, 
+        double K);
 #endif

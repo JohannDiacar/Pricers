@@ -1,10 +1,14 @@
 #pragma once
 
-enum payofftypes
+namespace utils
 {
-	call,
-	put
-};
+	static enum payofftypes
+	{
+		Call,
+		Put
+	};
+
+}
 /// 
 /// On utilisera un pricer textual 
 ///
@@ -13,10 +17,11 @@ class VanillaPayOff
 {
 public:
 	VanillaPayOff();
-	VanillaPayOff(payofftypes type);
-	std::vector<double> payoff_trace_forK(int N, double K, double bound_up, double bound_down);
+	VanillaPayOff(utils::payofftypes type);
+	double payoff(double S, double K, utils::payofftypes pftype);
+	std::vector<double> trace(int N, double K, double multi = 1);
 protected:
-	payofftypes type_payoffs;
+	utils::payofftypes type_payoffs;
 	std::vector<double> K;
 	std::vector<double> S;
 };
@@ -26,5 +31,5 @@ class Payoffs
 	public:
 		Payoffs();
 	protected:
-		payofftypes type_payoffs;
+		utils::payofftypes type_payoffs;
 };

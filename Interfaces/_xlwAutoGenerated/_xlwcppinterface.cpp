@@ -183,6 +183,71 @@ EXCEL_END
 
 //////////////////////////
 
+namespace
+{
+XLRegistration::Arg
+VanillaArgs[]=
+{
+{ "type","too lazy to comment this one ","XLF_OPER"},
+{ "N","too lazy to comment this one ","B"},
+{ "K","too lazy to comment this one ","B"}
+};
+  XLRegistration::XLFunctionRegistrationHelper
+registerVanilla("xlVanilla",
+"Vanilla",
+"Coding a Vanilla ",
+LibraryName,
+VanillaArgs,
+3
+,false
+,false
+,""
+,""
+,false
+,false
+,false
+);
+}
+
+
+
+extern "C"
+{
+LPXLFOPER EXCEL_EXPORT
+xlVanilla(
+LPXLFOPER typea,
+double Na,
+double K)
+{
+EXCEL_BEGIN;
+
+	if (XlfExcel::Instance().IsCalledByFuncWiz())
+		return XlfOper(true);
+
+XlfOper typeb(
+	(typea));
+std::string type(
+	typeb.AsString("type"));
+
+int N(
+	static_cast<int>(Na));
+
+
+CellMatrix result(
+	Vanilla(
+		type,
+		N,
+		K)
+	);
+return XlfOper(result);
+EXCEL_END
+}
+}
+
+
+
+//////////////////////////
+
 //////////////////////////
 // Methods that will get registered to execute in AutoOpen
 //////////////////////////
