@@ -8,6 +8,10 @@
 #define PCH_H
 
 // ajouter les en-têtes à précompiler ici
+#include <stdlib.h>
+#include <vector>
+#include <string>
+
 #include "framework.h"
 #include "BrownianMotion.h"
 #include "test.h"

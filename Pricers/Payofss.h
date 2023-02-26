@@ -1,11 +1,16 @@
 #pragma once
-
+#ifndef PAYOFFS
+#define PAYOFFS
+#include "pch.h"
+#include <string>
 namespace utils
 {
-	static enum payofftypes
+	enum OptionType
 	{
-		Call,
-		Put
+		Call=0,
+		Put,
+		DigitCall,
+		DigitPut
 	};
 
 }
@@ -17,19 +22,27 @@ class VanillaPayOff
 {
 public:
 	VanillaPayOff();
-	VanillaPayOff(utils::payofftypes type);
-	double payoff(double S, double K, utils::payofftypes pftype);
-	std::vector<double> trace(int N, double K, double multi = 1);
+	VanillaPayOff(utils::OptionType type);
+	double payoff(double S, double K, utils::OptionType pftype);
+	std::vector <double> trace(int N, double K, double multi);
 protected:
-	utils::payofftypes type_payoffs;
-	std::vector<double> K;
-	std::vector<double> S;
+	utils::OptionType type_payoffs;
+	std::vector <double> K;
+	std::vector <double> S;
 };
 
 class Payoffs
 {
 	public:
-		Payoffs();
+		Payoffs(double Strike_, utils::OptionType TheOptionsType, double _premium = 1);
+		Payoffs(double Strike_, std::string TheOptionsType, double _premium = 1);
+		double operator()(double Spot) const;
 	protected:
-		utils::payofftypes type_payoffs;
+		double strike;
+		utils::OptionType TheOptionsType;
+		double premium;
+	private:
+		Payoffs();
+
 };
+#endif // PAYOFFS

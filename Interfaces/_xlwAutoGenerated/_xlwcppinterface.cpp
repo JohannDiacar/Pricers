@@ -189,13 +189,13 @@ XLRegistration::Arg
 VanillaArgs[]=
 {
 { "type","too lazy to comment this one ","XLF_OPER"},
-{ "N","too lazy to comment this one ","B"},
+{ "S","too lazy to comment this one ","B"},
 { "K","too lazy to comment this one ","B"}
 };
   XLRegistration::XLFunctionRegistrationHelper
 registerVanilla("xlVanilla",
 "Vanilla",
-"Coding a Vanilla ",
+" a Vanilla ",
 LibraryName,
 VanillaArgs,
 3
@@ -216,7 +216,7 @@ extern "C"
 LPXLFOPER EXCEL_EXPORT
 xlVanilla(
 LPXLFOPER typea,
-double Na,
+double S,
 double K)
 {
 EXCEL_BEGIN;
@@ -229,15 +229,642 @@ XlfOper typeb(
 std::string type(
 	typeb.AsString("type"));
 
-int N(
-	static_cast<int>(Na));
+
+
+double result(
+	Vanilla(
+		type,
+		S,
+		K)
+	);
+return XlfOper(result);
+EXCEL_END
+}
+}
+
+
+
+//////////////////////////
+
+namespace
+{
+XLRegistration::Arg
+DigitArgs[]=
+{
+{ "type","too lazy to comment this one ","XLF_OPER"},
+{ "S","too lazy to comment this one ","B"},
+{ "K","too lazy to comment this one ","B"},
+{ "premium","too lazy to comment this one ","B"}
+};
+  XLRegistration::XLFunctionRegistrationHelper
+registerDigit("xlDigit",
+"Digit",
+" a Digit ",
+LibraryName,
+DigitArgs,
+4
+,false
+,false
+,""
+,""
+,false
+,false
+,false
+);
+}
+
+
+
+extern "C"
+{
+LPXLFOPER EXCEL_EXPORT
+xlDigit(
+LPXLFOPER typea,
+double S,
+double K,
+double premium)
+{
+EXCEL_BEGIN;
+
+	if (XlfExcel::Instance().IsCalledByFuncWiz())
+		return XlfOper(true);
+
+XlfOper typeb(
+	(typea));
+std::string type(
+	typeb.AsString("type"));
+
+
+
+
+double result(
+	Digit(
+		type,
+		S,
+		K,
+		premium)
+	);
+return XlfOper(result);
+EXCEL_END
+}
+}
+
+
+
+//////////////////////////
+
+namespace
+{
+XLRegistration::Arg
+Vanilla_MCArgs[]=
+{
+{ "Expiry","too lazy to comment this one ","B"},
+{ "Strike","too lazy to comment this one ","B"},
+{ "type","too lazy to comment this one ","XLF_OPER"},
+{ "Spot","too lazy to comment this one ","B"},
+{ "Vol","too lazy to comment this one ","B"},
+{ "r","too lazy to comment this one ","B"},
+{ "NumberOfPaths","too lazy to comment this one ","B"}
+};
+  XLRegistration::XLFunctionRegistrationHelper
+registerVanilla_MC("xlVanilla_MC",
+"Vanilla_MC",
+"too lazy to comment this function ",
+LibraryName,
+Vanilla_MCArgs,
+7
+,false
+,false
+,""
+,""
+,false
+,false
+,false
+);
+}
+
+
+
+extern "C"
+{
+LPXLFOPER EXCEL_EXPORT
+xlVanilla_MC(
+double Expiry,
+double Strike,
+LPXLFOPER typea,
+double Spot,
+double Vol,
+double r,
+double NumberOfPathsa)
+{
+EXCEL_BEGIN;
+
+	if (XlfExcel::Instance().IsCalledByFuncWiz())
+		return XlfOper(true);
+
+
+
+XlfOper typeb(
+	(typea));
+std::string type(
+	typeb.AsString("type"));
+
+
+
+
+unsigned long NumberOfPaths(
+	static_cast<unsigned long>(NumberOfPathsa));
+
+double result(
+	Vanilla_MC(
+		Expiry,
+		Strike,
+		type,
+		Spot,
+		Vol,
+		r,
+		NumberOfPaths)
+	);
+return XlfOper(result);
+EXCEL_END
+}
+}
+
+
+
+//////////////////////////
+
+namespace
+{
+XLRegistration::Arg
+Digit_MCArgs[]=
+{
+{ "Expiry","too lazy to comment this one ","B"},
+{ "Strike","too lazy to comment this one ","B"},
+{ "type","too lazy to comment this one ","XLF_OPER"},
+{ "Spot","too lazy to comment this one ","B"},
+{ "Vol","too lazy to comment this one ","B"},
+{ "r","too lazy to comment this one ","B"},
+{ "NumberOfPaths","too lazy to comment this one ","B"},
+{ "premium","too lazy to comment this one ","B"}
+};
+  XLRegistration::XLFunctionRegistrationHelper
+registerDigit_MC("xlDigit_MC",
+"Digit_MC",
+"too lazy to comment this function ",
+LibraryName,
+Digit_MCArgs,
+8
+,false
+,false
+,""
+,""
+,false
+,false
+,false
+);
+}
+
+
+
+extern "C"
+{
+LPXLFOPER EXCEL_EXPORT
+xlDigit_MC(
+double Expiry,
+double Strike,
+LPXLFOPER typea,
+double Spot,
+double Vol,
+double r,
+double NumberOfPathsa,
+double premium)
+{
+EXCEL_BEGIN;
+
+	if (XlfExcel::Instance().IsCalledByFuncWiz())
+		return XlfOper(true);
+
+
+
+XlfOper typeb(
+	(typea));
+std::string type(
+	typeb.AsString("type"));
+
+
+
+
+unsigned long NumberOfPaths(
+	static_cast<unsigned long>(NumberOfPathsa));
+
+
+double result(
+	Digit_MC(
+		Expiry,
+		Strike,
+		type,
+		Spot,
+		Vol,
+		r,
+		NumberOfPaths,
+		premium)
+	);
+return XlfOper(result);
+EXCEL_END
+}
+}
+
+
+
+//////////////////////////
+
+namespace
+{
+XLRegistration::Arg
+DeltaandGammaArgs[]=
+{
+{ "Expiry","too lazy to comment this one ","B"},
+{ "Strike","too lazy to comment this one ","B"},
+{ "type","too lazy to comment this one ","XLF_OPER"},
+{ "Spot","too lazy to comment this one ","B"},
+{ "Vol","too lazy to comment this one ","B"},
+{ "r","too lazy to comment this one ","B"},
+{ "NumberOfPaths","too lazy to comment this one ","B"},
+{ "premium","too lazy to comment this one ","B"},
+{ "h","too lazy to comment this one ","B"}
+};
+  XLRegistration::XLFunctionRegistrationHelper
+registerDeltaandGamma("xlDeltaandGamma",
+"DeltaandGamma",
+"too lazy to comment this function ",
+LibraryName,
+DeltaandGammaArgs,
+9
+,false
+,false
+,""
+,""
+,false
+,false
+,false
+);
+}
+
+
+
+extern "C"
+{
+LPXLFOPER EXCEL_EXPORT
+xlDeltaandGamma(
+double Expiry,
+double Strike,
+LPXLFOPER typea,
+double Spot,
+double Vol,
+double r,
+double NumberOfPathsa,
+double premium,
+double h)
+{
+EXCEL_BEGIN;
+
+	if (XlfExcel::Instance().IsCalledByFuncWiz())
+		return XlfOper(true);
+
+
+
+XlfOper typeb(
+	(typea));
+std::string type(
+	typeb.AsString("type"));
+
+
+
+
+unsigned long NumberOfPaths(
+	static_cast<unsigned long>(NumberOfPathsa));
+
 
 
 CellMatrix result(
-	Vanilla(
+	DeltaandGamma(
+		Expiry,
+		Strike,
 		type,
-		N,
-		K)
+		Spot,
+		Vol,
+		r,
+		NumberOfPaths,
+		premium,
+		h)
+	);
+return XlfOper(result);
+EXCEL_END
+}
+}
+
+
+
+//////////////////////////
+
+namespace
+{
+XLRegistration::Arg
+GreeksArgs[]=
+{
+{ "Expiry","too lazy to comment this one ","B"},
+{ "Strike","too lazy to comment this one ","B"},
+{ "type","too lazy to comment this one ","XLF_OPER"},
+{ "Spot","too lazy to comment this one ","B"},
+{ "Vol","too lazy to comment this one ","B"},
+{ "r","too lazy to comment this one ","B"},
+{ "NumberOfPaths","too lazy to comment this one ","B"},
+{ "premium","too lazy to comment this one ","B"},
+{ "h","too lazy to comment this one ","B"}
+};
+  XLRegistration::XLFunctionRegistrationHelper
+registerGreeks("xlGreeks",
+"Greeks",
+" Calculates Rho Vega and Theta ",
+LibraryName,
+GreeksArgs,
+9
+,false
+,false
+,""
+,""
+,false
+,false
+,false
+);
+}
+
+
+
+extern "C"
+{
+LPXLFOPER EXCEL_EXPORT
+xlGreeks(
+double Expiry,
+double Strike,
+LPXLFOPER typea,
+double Spot,
+double Vol,
+double r,
+double NumberOfPathsa,
+double premium,
+double h)
+{
+EXCEL_BEGIN;
+
+	if (XlfExcel::Instance().IsCalledByFuncWiz())
+		return XlfOper(true);
+
+
+
+XlfOper typeb(
+	(typea));
+std::string type(
+	typeb.AsString("type"));
+
+
+
+
+unsigned long NumberOfPaths(
+	static_cast<unsigned long>(NumberOfPathsa));
+
+
+
+CellMatrix result(
+	Greeks(
+		Expiry,
+		Strike,
+		type,
+		Spot,
+		Vol,
+		r,
+		NumberOfPaths,
+		premium,
+		h)
+	);
+return XlfOper(result);
+EXCEL_END
+}
+}
+
+
+
+//////////////////////////
+
+namespace
+{
+XLRegistration::Arg
+PriceAndGreeksHArgs[]=
+{
+{ "Expiry","too lazy to comment this one ","B"},
+{ "Strike","too lazy to comment this one ","B"},
+{ "type","too lazy to comment this one ","XLF_OPER"},
+{ "Spot","too lazy to comment this one ","B"},
+{ "Vol","too lazy to comment this one ","B"},
+{ "r","too lazy to comment this one ","B"},
+{ "NumberOfPaths","too lazy to comment this one ","B"},
+{ "premium","too lazy to comment this one ","B"},
+{ "h","too lazy to comment this one ","B"},
+{ "theta","too lazy to comment this one ","B"},
+{ "eta","too lazy to comment this one ","B"},
+{ "rho","too lazy to comment this one ","B"},
+{ "kappa","too lazy to comment this one ","B"},
+{ "v0","too lazy to comment this one ","B"}
+};
+  XLRegistration::XLFunctionRegistrationHelper
+registerPriceAndGreeksH("xlPriceAndGreeksH",
+"PriceAndGreeksH",
+" Calculates Rho Vega and Theta ",
+LibraryName,
+PriceAndGreeksHArgs,
+14
+,false
+,false
+,""
+,""
+,false
+,false
+,false
+);
+}
+
+
+
+extern "C"
+{
+LPXLFOPER EXCEL_EXPORT
+xlPriceAndGreeksH(
+double Expiry,
+double Strike,
+LPXLFOPER typea,
+double Spot,
+double Vol,
+double r,
+double NumberOfPathsa,
+double premium,
+double h,
+double theta,
+double eta,
+double rho,
+double kappa,
+double v0)
+{
+EXCEL_BEGIN;
+
+	if (XlfExcel::Instance().IsCalledByFuncWiz())
+		return XlfOper(true);
+
+
+
+XlfOper typeb(
+	(typea));
+std::string type(
+	typeb.AsString("type"));
+
+
+
+
+unsigned long NumberOfPaths(
+	static_cast<unsigned long>(NumberOfPathsa));
+
+
+
+
+
+
+
+
+CellMatrix result(
+	PriceAndGreeksH(
+		Expiry,
+		Strike,
+		type,
+		Spot,
+		Vol,
+		r,
+		NumberOfPaths,
+		premium,
+		h,
+		theta,
+		eta,
+		rho,
+		kappa,
+		v0)
+	);
+return XlfOper(result);
+EXCEL_END
+}
+}
+
+
+
+//////////////////////////
+
+namespace
+{
+XLRegistration::Arg
+PriceAndGreeksHVarRedArgs[]=
+{
+{ "Expiry","too lazy to comment this one ","B"},
+{ "Strike","too lazy to comment this one ","B"},
+{ "type","too lazy to comment this one ","XLF_OPER"},
+{ "Spot","too lazy to comment this one ","B"},
+{ "Vol","too lazy to comment this one ","B"},
+{ "r","too lazy to comment this one ","B"},
+{ "NumberOfPaths","too lazy to comment this one ","B"},
+{ "premium","too lazy to comment this one ","B"},
+{ "h","too lazy to comment this one ","B"},
+{ "theta","too lazy to comment this one ","B"},
+{ "eta","too lazy to comment this one ","B"},
+{ "rho","too lazy to comment this one ","B"},
+{ "kappa","too lazy to comment this one ","B"},
+{ "v0","too lazy to comment this one ","B"}
+};
+  XLRegistration::XLFunctionRegistrationHelper
+registerPriceAndGreeksHVarRed("xlPriceAndGreeksHVarRed",
+"PriceAndGreeksHVarRed",
+"too lazy to comment this function ",
+LibraryName,
+PriceAndGreeksHVarRedArgs,
+14
+,false
+,false
+,""
+,""
+,false
+,false
+,false
+);
+}
+
+
+
+extern "C"
+{
+LPXLFOPER EXCEL_EXPORT
+xlPriceAndGreeksHVarRed(
+double Expiry,
+double Strike,
+LPXLFOPER typea,
+double Spot,
+double Vol,
+double r,
+double NumberOfPathsa,
+double premium,
+double h,
+double theta,
+double eta,
+double rho,
+double kappa,
+double v0)
+{
+EXCEL_BEGIN;
+
+	if (XlfExcel::Instance().IsCalledByFuncWiz())
+		return XlfOper(true);
+
+
+
+XlfOper typeb(
+	(typea));
+std::string type(
+	typeb.AsString("type"));
+
+
+
+
+unsigned long NumberOfPaths(
+	static_cast<unsigned long>(NumberOfPathsa));
+
+
+
+
+
+
+
+
+CellMatrix result(
+	PriceAndGreeksHVarRed(
+		Expiry,
+		Strike,
+		type,
+		Spot,
+		Vol,
+		r,
+		NumberOfPaths,
+		premium,
+		h,
+		theta,
+		eta,
+		rho,
+		kappa,
+		v0)
 	);
 return XlfOper(result);
 EXCEL_END

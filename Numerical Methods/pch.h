@@ -9,5 +9,8 @@
 
 // ajouter les en-têtes à précompiler ici
 #include "framework.h"
-
+#include <stdlib.h>
+#include <vector>
+#include <math.h>
+#include "SimpleMonteCarlo.h"
 #endif //PCH_H

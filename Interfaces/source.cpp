@@ -3,6 +3,8 @@
 
 #include "..\Pricers\BrownianMotion.h"
 #include "..\Pricers\Payofss.h"
+#include "..\Numerical Methods\SimpleMonteCarlo.h"
+#include "..\Pricers\Heston.h"
 #pragma warning (disable : 4996)
 
 
@@ -42,31 +44,235 @@ brownianMotion(int number //Number of brownian motion
 
 }
 
-CellMatrix //Coding a Vanilla
-Vanilla(std::string type, int N, double K)
+double //Coding a Vanilla
+Vanilla(std::string type, double S, double K)
 {
-    
-    CellMatrix Result(N,1);
     VanillaPayOff* vanille = nullptr; 
-    std::vector <double> result(N);
     if (type == "CALL")
     {
-        VanillaPayOff *vanille = new VanillaPayOff();
-        result = vanille->trace(N, K,2*K);
-        for (int i = 0; i < N; i++)
-        {
-            Result(i, 0) = result[i];
-        }
+        VanillaPayOff *vanille = new VanillaPayOff(utils::Call);
+        double value = vanille->payoff(S, K, utils::Call);
+        delete vanille;
+        return value;
     }
     else
     {
         VanillaPayOff* vanille = new VanillaPayOff(utils::Put);
-        result = vanille->trace(N, K, 2 * K);
-        for (int i = 0; i < N; i++)
-        {
-            Result(i, 0) = result[i];
-        }
+        double value = vanille->payoff(S, K, utils::Put);
+        delete vanille;
+        return value;
     }
-    delete vanille;
+}
+double //Coding a Digit
+Digit(std::string type, double S, double K, double premium)
+{
+    if (type == "DIGITCALL")
+    {
+        Payoffs pOff = Payoffs(K,utils::DigitCall,premium);
+        return pOff(S);
+    }
+    else
+    {
+        Payoffs pOff = Payoffs(K, utils::DigitPut, premium);
+        return pOff(S);
+    }
+}
+double Vanilla_MC(double Expiry,double Strike ,std::string type ,double Spot, double Vol, double r, unsigned long NumberOfPaths)
+{
+    Payoffs pOff = Payoffs(Strike, type);
+    SimpleMonteCarlo* simple_mc = new SimpleMonteCarlo(pOff, Expiry, Spot, Vol, r, NumberOfPaths);
+    double price = simple_mc->compute();
+    delete simple_mc;
+    return price;
+}
+
+double
+Digit_MC(double Expiry,double Strike,std::string type,double Spot,double Vol,double r,unsigned long NumberOfPaths,double premium)
+{
+    Payoffs pOff = Payoffs(Strike, type, premium);
+    SimpleMonteCarlo* simple_mc = new SimpleMonteCarlo(pOff, Expiry, Spot, Vol, r, NumberOfPaths);
+    double price = simple_mc->compute();
+    delete simple_mc;
+    return price;
+}
+CellMatrix
+DeltaandGamma(double Expiry,
+    double Strike,
+    std::string type,
+    double Spot,
+    double Vol,
+    double r,
+    unsigned long NumberOfPaths,
+    double premium,
+    double h
+)
+{
+    double delta(0);
+    double gamma(0);
+    SimpleMonteCarlo* simple_mc = nullptr;    
+    CellMatrix Result(1, 2);
+
+    if (std::find(type.begin(), type.end(), 'D') != type.end())
+    {        
+        Payoffs pOff = Payoffs(Strike, type, premium);
+        SimpleMonteCarlo* simple_mc = new SimpleMonteCarlo(pOff, Expiry, Spot, Vol, r, NumberOfPaths);
+        simple_mc->DeltaAndGamma(h);    
+        Result(0, 0) = simple_mc->getDelta();
+        Result(0, 1) = simple_mc->getGamma();
+        delete simple_mc;
+    }
+    else
+    {
+        Payoffs pOff = Payoffs(Strike, type);
+        SimpleMonteCarlo* simple_mc = new SimpleMonteCarlo(pOff, Expiry, Spot, Vol, r, NumberOfPaths);
+        simple_mc->DeltaAndGamma(h);
+        Result(0, 0) = simple_mc->getDelta();
+        Result(0, 1) = simple_mc->getGamma();
+        delete simple_mc;
+    }
+    return Result;
+}
+
+CellMatrix // Calculates Rho Vega and Theta
+Greeks(double Expiry,
+    double Strike,
+    std::string type,
+    double Spot,
+    double Vol,
+    double r,
+    unsigned long NumberOfPaths,
+    double premium,
+    double h
+)
+{
+    double rho(0);
+    double vega(0);
+    double theta(0);
+    SimpleMonteCarlo* simple_mc = nullptr;
+    CellMatrix Result(1, 3);
+
+    if (std::find(type.begin(), type.end(), 'D') != type.end())
+    {
+        Payoffs pOff = Payoffs(Strike, type, premium);
+        SimpleMonteCarlo* simple_mc = new SimpleMonteCarlo(pOff, Expiry, Spot, Vol, r, NumberOfPaths);
+        simple_mc->Vega(h);
+        simple_mc->Rho(h);
+        simple_mc->Theta(h);
+        Result(0, 0) = simple_mc->getVega();
+        Result(0, 1) = simple_mc->getRho();
+        Result(0, 2) = simple_mc->getTheta();
+        delete simple_mc;
+    }
+    else
+    {
+        Payoffs pOff = Payoffs(Strike, type);
+        SimpleMonteCarlo* simple_mc = new SimpleMonteCarlo(pOff, Expiry, Spot, Vol, r, NumberOfPaths);
+        simple_mc->Vega(h);
+        simple_mc->Rho(h);
+        simple_mc->Theta(h);
+        Result(0, 0) = simple_mc->getVega();
+        Result(0, 1) = simple_mc->getRho();
+        Result(0, 2) = simple_mc->getTheta();
+        delete simple_mc;
+    }
+    return Result;
+}
+
+CellMatrix // Calculates Rho Vega and Theta
+PriceAndGreeksH(double Expiry,
+    double Strike,
+    std::string type,
+    double Spot,
+    double Vol,
+    double r,
+    unsigned long NumberOfPaths,
+    double premium,
+    double h,
+    double theta,
+    double eta, 
+    double rho,
+    double kappa, 
+    double v0
+)
+{
+    Heston* simple_mc = nullptr;
+    CellMatrix Result(1, 6);
+
+    if (std::find(type.begin(), type.end(), 'D') != type.end())
+    {
+        Payoffs pOff = Payoffs(Strike, type, premium);
+        Heston* simple_mc = new Heston(pOff, Expiry, Spot, Vol, r, NumberOfPaths,  theta,  eta, rho,  kappa, v0);
+        double price = simple_mc->compute();
+        Result(0, 0) = price;
+        simple_mc->DeltaAndGamma(h);
+        Result(0, 1) = simple_mc->getDelta();
+        Result(0, 2) = simple_mc->getGamma();
+        simple_mc->Vega(h);
+        simple_mc->Rho(h);
+        simple_mc->Theta(h);
+        Result(0, 3) = simple_mc->getVega();
+        Result(0, 4) = simple_mc->getRho();
+        Result(0, 5) = simple_mc->getTheta();
+        delete simple_mc;
+    }
+    else
+    {
+        Payoffs pOff = Payoffs(Strike, type);
+        Heston* simple_mc = new Heston(pOff, Expiry, Spot, Vol, r, NumberOfPaths, theta, eta, rho, kappa, v0);
+        double price = simple_mc->compute();
+        Result(0, 0) = price;
+        simple_mc->DeltaAndGamma(h);
+        Result(0, 1) = simple_mc->getDelta();
+        Result(0, 2) = simple_mc->getGamma();
+        simple_mc->Vega(h);
+        simple_mc->Rho(h);
+        simple_mc->Theta(h);
+        Result(0, 3) = simple_mc->getVega();
+        Result(0, 4) = simple_mc->getRho();
+        Result(0, 5) = simple_mc->getTheta();
+        delete simple_mc;
+    }
+    return Result;
+}
+
+CellMatrix PriceAndGreeksHVarRed(double Expiry, double Strike, std::string type, double Spot, double Vol, double r, unsigned long NumberOfPaths, double premium, double h, double theta, double eta, double rho, double kappa, double v0)
+{
+    Heston* simple_mc = nullptr;
+    CellMatrix Result(1, 6);
+
+    if (std::find(type.begin(), type.end(), 'D') != type.end())
+    {
+        Payoffs pOff = Payoffs(Strike, type, premium);
+        Heston* simple_mc = new Heston(pOff, Expiry, Spot, Vol, r, NumberOfPaths, theta, eta, rho, kappa, v0);
+        double price = simple_mc->computeVred();
+        Result(0, 0) = price;
+        simple_mc->DeltaAndGammaR(h);
+        Result(0, 1) = simple_mc->getDelta();
+        Result(0, 2) = simple_mc->getGamma();
+        simple_mc->VegaR(h);
+        simple_mc->RhoR(h);
+        simple_mc->ThetaR(h);
+        Result(0, 3) = simple_mc->getVega();
+        Result(0, 4) = simple_mc->getRho();
+        Result(0, 5) = simple_mc->getTheta();
+        delete simple_mc;
+    }
+    else
+    {
+        Payoffs pOff = Payoffs(Strike, type);
+        Heston* simple_mc = new Heston(pOff, Expiry, Spot, Vol, r, NumberOfPaths, theta, eta, rho, kappa, v0);
+        double price = simple_mc->computeVred();
+        Result(0, 0) = price;
+        simple_mc->DeltaAndGammaR(h);
+        Result(0, 1) = simple_mc->getDelta();
+        Result(0, 2) = simple_mc->getGamma();
+        simple_mc->VegaR(h);
+        simple_mc->RhoR(h);
+        simple_mc->ThetaR(h);
+        Result(0, 3) = simple_mc->getVega();
+        Result(0, 4) = simple_mc->getRho();
+        Result(0, 5) = simple_mc->getTheta();
+        delete simple_mc;
+    }
     return Result;
 }

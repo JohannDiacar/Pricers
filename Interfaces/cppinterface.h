@@ -12,18 +12,98 @@ using namespace xlw;
 
 
 short // echoes a short
-EchoShort(short x // number to be echoed
-       );
+EchoShort(      short x // number to be echoed
+        );
 
 CellMatrix //Get a Random Value
-GetRandom(int number //Number of random values
-            );
+GetRandom(      int number //Number of random values
+                 );
 CellMatrix //Generates a Brownian Motion
-brownianMotion(int number //Number of brownian motion
+brownianMotion( int number //Number of brownian motion
             );
 
-CellMatrix //Coding a Vanilla
-Vanilla(std::string type,
-        int N, 
-        double K);
+double // a Vanilla
+Vanilla(        std::string type,
+                double S, 
+                double K);
+double // a Digit
+Digit(          std::string type,
+                double S,
+                double K,
+                double premium);
+
+double
+Vanilla_MC(     double Expiry,
+                double Strike,
+                std::string type,
+                double Spot,
+                double Vol,
+                double r,
+                unsigned long NumberOfPaths
+                );
+double
+Digit_MC(       double Expiry,
+                double Strike,
+                std::string type,
+                double Spot,
+                double Vol,
+                double r,
+                unsigned long NumberOfPaths,
+                double premium
+                );
+CellMatrix 
+DeltaandGamma(  double Expiry,
+                double Strike,
+                std::string type,
+                double Spot,
+                double Vol,
+                double r,
+                unsigned long NumberOfPaths,
+                double premium,
+                double h
+                );
+CellMatrix // Calculates Rho Vega and Theta
+Greeks(         double Expiry,
+                double Strike,
+                std::string type,
+                double Spot,
+                double Vol,
+                double r,
+                unsigned long NumberOfPaths,
+                double premium,
+                double h
+                );
+CellMatrix // Calculates Rho Vega and Theta
+PriceAndGreeksH(double Expiry,
+                double Strike,
+                std::string type,
+                double Spot,
+                double Vol,
+                double r,
+                unsigned long NumberOfPaths,
+                double premium,
+                double h,
+                double theta,
+                double eta,
+                double rho,
+                double kappa,
+                double v0
+);
+CellMatrix
+PriceAndGreeksHVarRed(
+                double Expiry,
+                double Strike,
+                std::string type,
+                double Spot,
+                double Vol,
+                double r,
+                unsigned long NumberOfPaths,
+                double premium,
+                double h,
+                double theta,
+                double eta,
+                double rho,
+                double kappa,
+                double v0
+);
 #endif
