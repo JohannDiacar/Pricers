@@ -1,4 +1,3 @@
-
 #include"cppinterface.h"
 
 #include "..\Pricers\BrownianMotion.h"
@@ -183,7 +182,6 @@ PriceAndGreeksH(double Expiry,
     double Strike,
     std::string type,
     double Spot,
-    double Vol,
     double r,
     unsigned long NumberOfPaths,
     double premium,
@@ -192,7 +190,8 @@ PriceAndGreeksH(double Expiry,
     double eta, 
     double rho,
     double kappa, 
-    double v0
+    double v0,
+    unsigned int Nmc
 )
 {
     Heston* simple_mc = nullptr;
@@ -201,16 +200,16 @@ PriceAndGreeksH(double Expiry,
     if (std::find(type.begin(), type.end(), 'D') != type.end())
     {
         Payoffs pOff = Payoffs(Strike, type, premium);
-        Heston* simple_mc = new Heston(pOff, Expiry, Spot, Vol, r, NumberOfPaths,  theta,  eta, rho,  kappa, v0);
+        Heston* simple_mc = new Heston(pOff, Expiry, Spot, r, NumberOfPaths,  theta,  eta, rho,  kappa, v0, Nmc);
         double price = simple_mc->compute();
         Result(0, 0) = price;
         simple_mc->DeltaAndGamma(h);
         Result(0, 1) = simple_mc->getDelta();
         Result(0, 2) = simple_mc->getGamma();
-        simple_mc->Vega(h);
+        simple_mc->Eta(h);
         simple_mc->Rho(h);
         simple_mc->Theta(h);
-        Result(0, 3) = simple_mc->getVega();
+        Result(0, 3) = simple_mc->getEta();
         Result(0, 4) = simple_mc->getRho();
         Result(0, 5) = simple_mc->getTheta();
         delete simple_mc;
@@ -218,16 +217,16 @@ PriceAndGreeksH(double Expiry,
     else
     {
         Payoffs pOff = Payoffs(Strike, type);
-        Heston* simple_mc = new Heston(pOff, Expiry, Spot, Vol, r, NumberOfPaths, theta, eta, rho, kappa, v0);
+        Heston* simple_mc = new Heston(pOff, Expiry, Spot, r, NumberOfPaths, theta, eta, rho, kappa, v0, Nmc);
         double price = simple_mc->compute();
         Result(0, 0) = price;
         simple_mc->DeltaAndGamma(h);
         Result(0, 1) = simple_mc->getDelta();
         Result(0, 2) = simple_mc->getGamma();
-        simple_mc->Vega(h);
+        simple_mc->Eta(h);
         simple_mc->Rho(h);
         simple_mc->Theta(h);
-        Result(0, 3) = simple_mc->getVega();
+        Result(0, 3) = simple_mc->getEta();
         Result(0, 4) = simple_mc->getRho();
         Result(0, 5) = simple_mc->getTheta();
         delete simple_mc;
@@ -235,7 +234,7 @@ PriceAndGreeksH(double Expiry,
     return Result;
 }
 
-CellMatrix PriceAndGreeksHVarRed(double Expiry, double Strike, std::string type, double Spot, double Vol, double r, unsigned long NumberOfPaths, double premium, double h, double theta, double eta, double rho, double kappa, double v0)
+CellMatrix PriceAndGreeksHVarRed(double Expiry, double Strike, std::string type, double Spot, double r, unsigned long NumberOfPaths, double premium, double h, double theta, double eta, double rho, double kappa, double v0, unsigned int Nmc)
 {
     Heston* simple_mc = nullptr;
     CellMatrix Result(1, 6);
@@ -243,16 +242,16 @@ CellMatrix PriceAndGreeksHVarRed(double Expiry, double Strike, std::string type,
     if (std::find(type.begin(), type.end(), 'D') != type.end())
     {
         Payoffs pOff = Payoffs(Strike, type, premium);
-        Heston* simple_mc = new Heston(pOff, Expiry, Spot, Vol, r, NumberOfPaths, theta, eta, rho, kappa, v0);
+        Heston* simple_mc = new Heston(pOff, Expiry, Spot, r, NumberOfPaths, theta, eta, rho, kappa, v0, Nmc);
         double price = simple_mc->computeVred();
         Result(0, 0) = price;
         simple_mc->DeltaAndGammaR(h);
         Result(0, 1) = simple_mc->getDelta();
         Result(0, 2) = simple_mc->getGamma();
-        simple_mc->VegaR(h);
+        simple_mc->EtaR(h);
         simple_mc->RhoR(h);
         simple_mc->ThetaR(h);
-        Result(0, 3) = simple_mc->getVega();
+        Result(0, 3) = simple_mc->getEta();
         Result(0, 4) = simple_mc->getRho();
         Result(0, 5) = simple_mc->getTheta();
         delete simple_mc;
@@ -260,16 +259,16 @@ CellMatrix PriceAndGreeksHVarRed(double Expiry, double Strike, std::string type,
     else
     {
         Payoffs pOff = Payoffs(Strike, type);
-        Heston* simple_mc = new Heston(pOff, Expiry, Spot, Vol, r, NumberOfPaths, theta, eta, rho, kappa, v0);
+        Heston* simple_mc = new Heston(pOff, Expiry, Spot, r, NumberOfPaths, theta, eta, rho, kappa, v0, Nmc);
         double price = simple_mc->computeVred();
         Result(0, 0) = price;
         simple_mc->DeltaAndGammaR(h);
         Result(0, 1) = simple_mc->getDelta();
         Result(0, 2) = simple_mc->getGamma();
-        simple_mc->VegaR(h);
+        simple_mc->EtaR(h);
         simple_mc->RhoR(h);
         simple_mc->ThetaR(h);
-        Result(0, 3) = simple_mc->getVega();
+        Result(0, 3) = simple_mc->getEta();
         Result(0, 4) = simple_mc->getRho();
         Result(0, 5) = simple_mc->getTheta();
         delete simple_mc;

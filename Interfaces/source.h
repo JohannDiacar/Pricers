@@ -1,6 +1,5 @@
 #ifndef TEST_H
 #define TEST_H
-
 #include <xlw/MyContainers.h>
 #include <xlw/CellMatrix.h>
 #include <xlw/DoubleOrNothing.h>
@@ -78,6 +77,7 @@ PriceAndGreeksH(double Expiry,
                 double Strike,
                 std::string type,
                 double Spot,
+                double Vol,
                 double r,
                 unsigned long NumberOfPaths,
                 double premium,
@@ -87,7 +87,7 @@ PriceAndGreeksH(double Expiry,
                 double rho,
                 double kappa,
                 double v0,
-                unsigned int Nmc
+                int Nmc
 );
 CellMatrix
 PriceAndGreeksHVarRed(
@@ -95,6 +95,7 @@ PriceAndGreeksHVarRed(
                 double Strike,
                 std::string type,
                 double Spot,
+                double Vol,
                 double r,
                 unsigned long NumberOfPaths,
                 double premium,
@@ -104,6 +105,26 @@ PriceAndGreeksHVarRed(
                 double rho,
                 double kappa,
                 double v0,
-                unsigned int Nmc
+               int Nmc
+);
+CellMatrix
+CalibrationHRed(
+    double Expiry,
+    double Strike,
+    std::string type,
+    double Spot,
+    double Vol,
+    double r,
+    unsigned long NumberOfPaths,
+    double premium,
+    double h,
+    double theta,
+    double eta,
+    double rho,
+    double kappa,
+    double v0,
+    int Nmc,
+    CellMatrix strikes,
+    CellMatrix prices
 );
 #endif

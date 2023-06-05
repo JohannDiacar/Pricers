@@ -675,7 +675,8 @@ PriceAndGreeksHArgs[]=
 { "eta","too lazy to comment this one ","B"},
 { "rho","too lazy to comment this one ","B"},
 { "kappa","too lazy to comment this one ","B"},
-{ "v0","too lazy to comment this one ","B"}
+{ "v0","too lazy to comment this one ","B"},
+{ "Nmc","too lazy to comment this one ","B"}
 };
   XLRegistration::XLFunctionRegistrationHelper
 registerPriceAndGreeksH("xlPriceAndGreeksH",
@@ -683,7 +684,7 @@ registerPriceAndGreeksH("xlPriceAndGreeksH",
 " Calculates Rho Vega and Theta ",
 LibraryName,
 PriceAndGreeksHArgs,
-14
+15
 ,false
 ,false
 ,""
@@ -713,7 +714,8 @@ double theta,
 double eta,
 double rho,
 double kappa,
-double v0)
+double v0,
+double Nmca)
 {
 EXCEL_BEGIN;
 
@@ -740,6 +742,9 @@ unsigned long NumberOfPaths(
 
 
 
+int Nmc(
+	static_cast<int>(Nmca));
+
 CellMatrix result(
 	PriceAndGreeksH(
 		Expiry,
@@ -755,7 +760,8 @@ CellMatrix result(
 		eta,
 		rho,
 		kappa,
-		v0)
+		v0,
+		Nmc)
 	);
 return XlfOper(result);
 EXCEL_END
@@ -784,7 +790,8 @@ PriceAndGreeksHVarRedArgs[]=
 { "eta","too lazy to comment this one ","B"},
 { "rho","too lazy to comment this one ","B"},
 { "kappa","too lazy to comment this one ","B"},
-{ "v0","too lazy to comment this one ","B"}
+{ "v0","too lazy to comment this one ","B"},
+{ "Nmc","too lazy to comment this one ","B"}
 };
   XLRegistration::XLFunctionRegistrationHelper
 registerPriceAndGreeksHVarRed("xlPriceAndGreeksHVarRed",
@@ -792,7 +799,7 @@ registerPriceAndGreeksHVarRed("xlPriceAndGreeksHVarRed",
 "too lazy to comment this function ",
 LibraryName,
 PriceAndGreeksHVarRedArgs,
-14
+15
 ,false
 ,false
 ,""
@@ -822,7 +829,8 @@ double theta,
 double eta,
 double rho,
 double kappa,
-double v0)
+double v0,
+double Nmca)
 {
 EXCEL_BEGIN;
 
@@ -849,6 +857,9 @@ unsigned long NumberOfPaths(
 
 
 
+int Nmc(
+	static_cast<int>(Nmca));
+
 CellMatrix result(
 	PriceAndGreeksHVarRed(
 		Expiry,
@@ -864,7 +875,139 @@ CellMatrix result(
 		eta,
 		rho,
 		kappa,
-		v0)
+		v0,
+		Nmc)
+	);
+return XlfOper(result);
+EXCEL_END
+}
+}
+
+
+
+//////////////////////////
+
+namespace
+{
+XLRegistration::Arg
+CalibrationHRedArgs[]=
+{
+{ "Expiry","too lazy to comment this one ","B"},
+{ "Strike","too lazy to comment this one ","B"},
+{ "type","too lazy to comment this one ","XLF_OPER"},
+{ "Spot","too lazy to comment this one ","B"},
+{ "Vol","too lazy to comment this one ","B"},
+{ "r","too lazy to comment this one ","B"},
+{ "NumberOfPaths","too lazy to comment this one ","B"},
+{ "premium","too lazy to comment this one ","B"},
+{ "h","too lazy to comment this one ","B"},
+{ "theta","too lazy to comment this one ","B"},
+{ "eta","too lazy to comment this one ","B"},
+{ "rho","too lazy to comment this one ","B"},
+{ "kappa","too lazy to comment this one ","B"},
+{ "v0","too lazy to comment this one ","B"},
+{ "Nmc","too lazy to comment this one ","B"},
+{ "strikes","too lazy to comment this one ","XLF_OPER"},
+{ "prices","too lazy to comment this one ","XLF_OPER"}
+};
+  XLRegistration::XLFunctionRegistrationHelper
+registerCalibrationHRed("xlCalibrationHRed",
+"CalibrationHRed",
+"too lazy to comment this function ",
+LibraryName,
+CalibrationHRedArgs,
+17
+,false
+,false
+,""
+,""
+,false
+,false
+,false
+);
+}
+
+
+
+extern "C"
+{
+LPXLFOPER EXCEL_EXPORT
+xlCalibrationHRed(
+double Expiry,
+double Strike,
+LPXLFOPER typea,
+double Spot,
+double Vol,
+double r,
+double NumberOfPathsa,
+double premium,
+double h,
+double theta,
+double eta,
+double rho,
+double kappa,
+double v0,
+double Nmca,
+LPXLFOPER strikesa,
+LPXLFOPER pricesa)
+{
+EXCEL_BEGIN;
+
+	if (XlfExcel::Instance().IsCalledByFuncWiz())
+		return XlfOper(true);
+
+
+
+XlfOper typeb(
+	(typea));
+std::string type(
+	typeb.AsString("type"));
+
+
+
+
+unsigned long NumberOfPaths(
+	static_cast<unsigned long>(NumberOfPathsa));
+
+
+
+
+
+
+
+
+int Nmc(
+	static_cast<int>(Nmca));
+
+XlfOper strikesb(
+	(strikesa));
+CellMatrix strikes(
+	strikesb.AsCellMatrix("strikes"));
+
+XlfOper pricesb(
+	(pricesa));
+CellMatrix prices(
+	pricesb.AsCellMatrix("prices"));
+
+CellMatrix result(
+	CalibrationHRed(
+		Expiry,
+		Strike,
+		type,
+		Spot,
+		Vol,
+		r,
+		NumberOfPaths,
+		premium,
+		h,
+		theta,
+		eta,
+		rho,
+		kappa,
+		v0,
+		Nmc,
+		strikes,
+		prices)
 	);
 return XlfOper(result);
 EXCEL_END

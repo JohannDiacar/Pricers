@@ -15,10 +15,6 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <None Include="xlwInterfaceDef.props" />
-    <None Include="packages.config" />
-  </ItemGroup>
-  <ItemGroup>
     <ClCompile Include="source.cpp">
       <Filter>Fichiers sources</Filter>
     </ClCompile>
@@ -27,5 +23,9 @@
     <ClInclude Include="cppinterface.h">
       <Filter>Fichiers d%27en-tête</Filter>
     </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="xlwInterfaceDef.props" />
+    <None Include="packages.config" />
   </ItemGroup>
 </Project>

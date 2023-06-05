@@ -28,6 +28,10 @@ Payoffs::Payoffs(double Strike_, std::string TheOptionsType, double _premium) : 
 	{
 		this->TheOptionsType = utils::OptionType::DigitPut;
 	}
+	else if (TheOptionsType == "GlobalFlooredCliquet")
+	{
+		this->TheOptionsType = utils::OptionType::GlobalFlooredCliquet;
+	}
 	else
 	{
 		throw("Wrong type of payoffs");
@@ -47,9 +51,40 @@ double Payoffs::operator()(double Spot) const
 	case utils::DigitPut:
 		if (strike > Spot) { return this->premium;}
 		else { return 0; }
+	case utils::GlobalFlooredCliquet:
+		if (this->_globalFlooredCliquet == nullptr) { throw("GlobalFlooredCliquet not initialized"); }
+		else
+		{
+			double cap = this->_globalFlooredCliquet->_cap;
+			double floor = this->_globalFlooredCliquet->_floor;
+			double S1onS0 = this->_globalFlooredCliquet->_S1 / this->_globalFlooredCliquet->_S0;
+
+			double max_arg = (((S1onS0) > (floor)) ? (S1onS0) : (floor));
+			return (((cap) < (max_arg)) ? (cap) : (max_arg));
+		}
 	default:
 		throw("unknown option type found.");
 	}
+}
+void Payoffs::setStrike(const double strike)
+{
+	this->strike = strike;
+}
+void Payoffs::setGlobalFlooredCliquet(double _cap, double _floor, double S0, double S1)
+{
+	this->_globalFlooredCliquet = new PayoffMaterials::GlobalFlooredCliquet(_cap, _floor, S0, S1);
+}
+void Payoffs::setGlobalFlooredCliquetSpot(double S0, double S1)
+{
+	this->_globalFlooredCliquet->setSpot(S0, S1);
+}
+void Payoffs::setGlobalFlooredCliquetSpot(double S_new)
+{
+	this->_globalFlooredCliquet->setSpot(S_new);
+}
+utils::OptionType Payoffs::getOptionsType() const
+{
+	return this->TheOptionsType;
 }
 VanillaPayOff::VanillaPayOff()
 {
