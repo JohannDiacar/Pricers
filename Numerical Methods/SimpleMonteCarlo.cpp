@@ -46,7 +46,7 @@ SimpleMonteCarlo::SimpleMonteCarlo(Payoffs* thePayOff, double Expiry, double Spo
 	randNums_.resize(NumberOfPaths_);
 	for (unsigned long i = 0; i < NumberOfPaths_; ++i) {
 		// Generate random numbers for each scenario and store in randNums_
-		randNums_[i].push_back(Random::GetOneGaussianByBoxMuller());
+		randNums_[i].push_back(Random::getOneGaussianByBoxMuller());
 	}
 	this->price_ = 0;
 	thePayOff_ = thePayOff;
@@ -474,7 +474,7 @@ void SimpleMonteCarlo::resetRandom()
 	for (unsigned int j = 0; j < this->NumberOfPaths_; ++j) {
 		for (unsigned long i = 0; i < this->NumberOfPaths_; ++i) {
 			// Generate random numbers for each scenario and store in randNums_
-			this->randNums_[j][i] = Random::GetOneGaussianByBoxMuller();
+			this->randNums_[j][i] = Random::getOneGaussianByBoxMuller();
 		}
 	}
 }

@@ -62,6 +62,13 @@ double Payoffs::operator()(double Spot) const
 			double max_arg = (((S1onS0) > (floor)) ? (S1onS0) : (floor));
 			return (((cap) < (max_arg)) ? (cap) : (max_arg));
 		}
+	case utils::AutoCall:
+		if (this->_autocall == nullptr) { throw("Autocall not initialized"); }
+		else
+		{
+
+		}
+
 	default:
 		throw("unknown option type found.");
 	}

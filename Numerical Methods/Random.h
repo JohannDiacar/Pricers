@@ -4,8 +4,10 @@ class Random
 	public:
 		Random();
 		~Random();
-		static double GetOneGaussianBySummation();
-		static double GetOneGaussianByBoxMuller();
+		static double getOneGaussianBySummation();
+		static double getOneGaussianByBoxMuller();
+		static double getNormalDistribution();
+		static double getNormalDistributionEngine(int engine = 0);
 	protected:
 
 

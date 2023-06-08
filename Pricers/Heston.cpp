@@ -3,7 +3,6 @@
 #include <math.h>
 #include <future>
 #include <numeric>
-#include <random>
 #include <algorithm>	
 #include <ctime>
 #include <cmath>
@@ -12,6 +11,11 @@
 #include <thread>
 #include <mutex>
 using std::exp;
+using std::sqrt;
+using std::pow;
+using std::log;
+using std::abs;
+
 
 Heston::Heston()
 {
@@ -38,14 +42,19 @@ Heston::Heston()
 	this->theta_ = 0;
 	this->Nmc_ = 10;
 	this->diff_time = 0;
+	this->marketData = nullptr;
+	this->random_engine = 0;
 }
-Heston::Heston(Payoffs * thePayOff, double Expiry, double Spot, double r, unsigned long NumberOfPaths, double theta, double eta, double rho, double kappa, double v0, unsigned int Nmc)
+Heston::Heston(Payoffs * thePayOff, double Expiry, double Spot, double r, unsigned long NumberOfPaths, double theta, double eta, double rho, double kappa, double v0, unsigned int Nmc, int random_engine_in)
 {
 	this->thePayOff_ = thePayOff;
 
 	this->Expiry_ = Expiry;
 	this->Spot_ = Spot;
 	this->r_ = r;
+	this->mu_ = 0;
+	this->omega_ = 0;
+	this->exp_sensi = 0;
 	this->NumberOfPaths_ = NumberOfPaths;
 	this->h_ = 0;
 	this->delta = 0;
@@ -63,16 +72,24 @@ Heston::Heston(Payoffs * thePayOff, double Expiry, double Spot, double r, unsign
 	this->Nmc_ = Nmc;
 	this->diff_time = 0;
 	this->randNums_ = std::vector<std::vector<std::vector<double>>>(this->Nmc_, std::vector<std::vector<double>>(NumberOfPaths, std::vector<double>(2, 0)));
+	this->random_engine = random_engine_in;
 	for (unsigned int j = 0; j < this->Nmc_; ++j) {
 		for (unsigned long i = 0; i < this->NumberOfPaths_; ++i) {
 			// Generate random numbers for each scenario and store in randNums_
-			this->randNums_[j][i][0] = Random::GetOneGaussianByBoxMuller();
-			this->randNums_[j][i][1] = Random::GetOneGaussianByBoxMuller();
+			this->randNums_[j][i][0] = Random::getNormalDistributionEngine(this->random_engine);
+			this->randNums_[j][i][1] = Random::getNormalDistributionEngine(this->random_engine);
 		}
 	}
+	this->marketData = nullptr;
+
 }
 Heston::~Heston()
-{
+{	
+	if (this->marketData != nullptr)
+	{
+		delete this->marketData;
+		this->marketData = nullptr;
+	}
 }
 double Heston::computesMT()
 {
@@ -90,15 +107,15 @@ double Heston::computesMT()
 	auto t_start = std::chrono::high_resolution_clock::now();
 	for (unsigned int j = 0; j < Nmc_; ++j)
 	{
-		for (unsigned long i = 1; i < NumberOfPaths_; ++i) {
+		for (unsigned int i = 1; i < NumberOfPaths_; ++i) {
 			// Generate two independent Gaussian random variables for each time step
 			g1 = randNums_[j][i - 1][0];
 			g2 = randNums_[j][i - 1][1];
 
-			// Calculate variance and spot price at the next time step using Euler discretization
-			V[i] = V[i - 1] + (kappa_ * (theta_ - V[i - 1]) * (deltaT)+eta_ * sqrt(abs(V[i - 1])) * sd_t * g1 + 0.25 * (eta_ * eta_) * deltaT * ((g1 * g1) - 1));
-			S[i] = S[i - 1] * (exp((r_ - (V[i] / 2.0)) * deltaT + sqrt(abs(V[i])) * (rho_ * sd_t * g1 + srho2 * sd_t * g2)));
-
+			// Calculate variance and spot price at the next time step using Euler and Milstein discretization
+			double v_max = std::max<double>(V[i - 1], 0.0);
+			V[i] = V[i - 1] + (kappa_ * (theta_ - v_max) * (deltaT)) + (eta_ * sqrt(v_max * deltaT) * g1) + (0.25 * (eta_ * eta_) * deltaT * ((g1 * g1) - 1)); // Milsten discretization
+			S[i] = S[i - 1] * exp((r_ - 0.5 * v_max) * deltaT + sqrt(v_max * deltaT) * (rho_ * g1 + srho2 * g2));
 			// Compute the payoff of the option at the final time step
 			if (i == NumberOfPaths_ - 1) {
 				runningSum += (*thePayOff_)(S[i]);
@@ -145,8 +162,9 @@ double Heston::computeMT()
 				g2 = randNums_[j][i - 1][1];
 
 				// Calculate variance and spot price at the next time step using Euler discretization
-				V[i] = V[i - 1] + (kappa_ * (theta_ - V[i - 1]) * (deltaT)+eta_ * sqrt(abs(V[i - 1])) * sd_t * g1 + 0.25 * (eta_ * eta_) * deltaT * ((g1 * g1) - 1));
-				S[i] = S[i - 1] * (exp((r_ - (V[i] / 2.0)) * deltaT + sqrt(abs(V[i])) * (rho_ * sd_t * g1 + srho2 * sd_t * g2)));
+				double v_max = std::max<double>(V[i - 1], 0.0);
+				V[i] = V[i - 1] + (kappa_ * (theta_ - v_max) * (deltaT)) + (eta_ * sqrt(v_max * deltaT) * g1) + (0.25 * (eta_ * eta_) * deltaT * ((g1 * g1) - 1)); // Milsten discretization
+				S[i] = S[i - 1] * exp((r_ - 0.5 * v_max) * deltaT + sqrt(v_max * deltaT) * (rho_ * g1 + srho2 * g2));
 
 				// Compute the payoff of the option at the final time step
 				if (i == NumberOfPaths_ - 1) {
@@ -217,8 +235,9 @@ double Heston::computeMT2()
 				g1 = randNums_[j][i - 1][0];
 				g2 = randNums_[j][i - 1][1];
 
-				V[i] = V[i - 1] + (kappa_ * (theta_ - V[i - 1]) * (deltaT)+eta_ * sqrt(abs(V[i - 1])) * sd_t * g1 + 0.25 * (eta_ * eta_) * deltaT * ((g1 * g1) - 1));
-				S[i] = S[i - 1] * (exp((r_ - (V[i] / 2.0)) * deltaT + sqrt(abs(V[i])) * (rho_ * sd_t * g1 + srho2 * sd_t * g2)));
+				double v_max = std::max<double>(V[i - 1], 0.0);
+				V[i] = V[i - 1] + (kappa_ * (theta_ - v_max) * (deltaT)) + (eta_ * sqrt(v_max * deltaT) * g1) + (0.25 * (eta_ * eta_) * deltaT * ((g1 * g1) - 1)); // Milsten discretization
+				S[i] = S[i - 1] * exp((r_ - 0.5 * v_max) * deltaT + sqrt(v_max * deltaT) * (rho_ * g1 + srho2 * g2));
 
 				if (i == NumberOfPaths_ - 1) {
 					localRunningSum += (*thePayOff_)(S[i]);
@@ -254,7 +273,7 @@ double Heston::computeMT2()
 }
 
 
-std::vector<double> Heston::pathSimulation(int j)
+std::vector<double> Heston::pathSimulation(int j, bool is_vol)
 {
 	//V[i+1] = V[i] + k*(teta-V[i])*delta_t + eta*mt.sqrt(abs(V[i]))*mt.sqrt(delta_t)*g1 + 1/4*(nu**2)*delta_t*((g1**2)-1)
 	//S[i + 1] = S[i] * mt.exp((r - V[i] / 2) * delta_t + mt.sqrt(abs(V[i])) * (rho * mt.sqrt(delta_t) * g1 + mt.sqrt(1 - rho * *2) * mt.sqrt(delta_t) * g2))
@@ -262,24 +281,24 @@ std::vector<double> Heston::pathSimulation(int j)
 	double g1;
 	double g2;
 	double deltaT = (double)(this->Expiry_ / (double)this->NumberOfPaths_);
-	double sd_t = sqrt(deltaT);
-	double srho2 = sqrt(1 - rho_ * rho_) * sd_t;
-	double etaetadeltat = (1 / 4) * (eta_ * eta_) * deltaT;
-	double rhosdt = rho_ * sd_t;
+	double srho2 = sqrt(1 - rho_ * rho_);
 	std::vector<double> V(NumberOfPaths_, this->v0_); // Vector of variance values
 	std::vector<double> S(NumberOfPaths_, this->Spot_); // Vector of spot price values
 	auto t_start = std::chrono::high_resolution_clock::now();
-	for (unsigned long i = 1; i < NumberOfPaths_; ++i) {
+	for (unsigned int i = 1; i < NumberOfPaths_; ++i) {
 			// Generate two independent Gaussian random variables for each time step
 			g1 = this->randNums_[j][i - 1][0];
 			g2 = this->randNums_[j][i - 1][1];
 
 			// Calculate variance and spot price at the next time step using Euler discretization
-			V[i] = V[i - 1] + (kappa_ * (theta_ - V[i - 1]) * deltaT + eta_ * sqrt(abs(V[i - 1])) * sd_t * g1 + etaetadeltat * ((g1 * g1) - 1));
-			S[i] = S[i - 1] * exp((r_ - (V[i] / (double)2.0)) * deltaT + sqrt(abs(V[i])) * (rhosdt * g1 + srho2 * g2));
+			double v_max = std::max<double>(V[i - 1], 0.0);
+			V[i] = V[i - 1] + (kappa_ * (theta_ - v_max) * (deltaT)) + (eta_ * sqrt(v_max * deltaT) * g1) + (0.25 * (eta_ * eta_) * deltaT * ((g1 * g1) - 1)); // Milsten discretization
+			S[i] = S[i - 1] * exp( (r_ - 0.5 * v_max) * deltaT + sqrt(v_max * deltaT) * ( rho_ * g1 + srho2 * g2 ) );
 	}
 	auto t_end = std::chrono::high_resolution_clock::now();
 	this->diff_time = std::chrono::duration<double, std::milli>(t_end - t_start).count();
+	if (is_vol)
+		return V;
 	return S;
 }
 double Heston::computeVredsMT()
@@ -304,18 +323,19 @@ double Heston::computeVredsMT()
 			double g2 = this->randNums_[j][i - 1][1];
 
 			// Calculate variance and spot price at the next time step using Euler discretization
-			V[i] = V[i - 1] + (kappa_ * (theta_ - V[i - 1]) * (deltaT)+eta_ * sqrt(abs(V[i - 1])) * sd_t * g1 + 0.25 * (eta_ * eta_) * deltaT * ((g1 * g1) - 1));
-			S[i] = S[i - 1] * (exp((r_ - (V[i] / 2.0)) * deltaT + sqrt(abs(V[i])) * (rho_ * sd_t * g1 + srho2 * sd_t * g2)));
-
-			Vred[i] = Vred[i - 1] + ((kappa_ * (theta_ - Vred[i - 1]) * (deltaT)+(eta_ * sqrt(abs(Vred[i - 1])) * sd_t * -g1) + 0.25 * (eta_ * eta_) * deltaT * (pow(-g1, 2) - 1)));
-			Sred[i] = Sred[i - 1] * ((exp((r_ - (Vred[i] / 2.0)) * deltaT + sqrt(abs(Vred[i])) * (rho_ * sd_t * -g1 + srho2 * sd_t * -g2))));
+			double v_max = std::max<double>(V[i - 1], 0.0);
+			V[i] = V[i - 1] + (kappa_ * (theta_ - v_max) * (deltaT)) + (eta_ * sqrt(v_max * deltaT) * g1) + (0.25 * (eta_ * eta_) * deltaT * ((g1 * g1) - 1)); // Milsten discretization
+			S[i] = S[i - 1] * exp((r_ - 0.5 * v_max) * deltaT + sqrt(v_max * deltaT) * (rho_ * g1 + srho2 * g2));
+			v_max = std::max<double>(Vred[i - 1], 0.0);
+			Vred[i] = Vred[i - 1] + ( kappa_ * (theta_ - v_max) * (deltaT) )+(eta_ * sqrt(abs(v_max)) * sd_t * -g1) + ( 0.25 * (eta_ * eta_) * deltaT * (pow(-g1, 2) - 1));
+			Sred[i] = Sred[i - 1] * exp( (r_ - 0.5 * v_max) * deltaT + sqrt(v_max * deltaT) * (rho_ * -g1 + srho2 * -g2) );
 
 			// Compute the payoff of the option at the final time step
 			if (i == NumberOfPaths_ - 1) {
 				runningSum += (*thePayOff_)(S[i]);
 				runningSum += (*thePayOff_)(Sred[i]);
 			}
-			else if (thePayOff_->getOptionsType() == utils::GlobalFlooredCliquet)
+			else if (thePayOff_->getOptionsType() == utils::GlobalFlooredCliquet || thePayOff_->getOptionsType() == utils::AutoCall)
 			{
 				runningSum += (*thePayOff_)(S[i]);
 				runningSum += (*thePayOff_)(Sred[i]);
@@ -360,12 +380,13 @@ double Heston::computeVredMT()
 				double g2 = this->randNums_[j][i - 1][1];
 
 				// Calculate variance and spot price at the next time step using Euler discretization
-				V[i] = V[i - 1] + (kappa_ * (theta_ - V[i - 1]) * (deltaT)+eta_ * sqrt(abs(V[i - 1])) * sd_t * g1 + 0.25 * (eta_ * eta_) * deltaT * ((g1 * g1) - 1));
-				S[i] = S[i - 1] * (exp((r_ - (V[i] / 2.0)) * deltaT + sqrt(abs(V[i])) * (rho_ * sd_t * g1 + srho2 * sd_t * g2)));
-
-				Vred[i] = Vred[i - 1] + ((kappa_ * (theta_ - Vred[i - 1]) * (deltaT)+(eta_ * sqrt(abs(Vred[i - 1])) * sd_t * -g1) + 0.25 * (eta_ * eta_) * deltaT * (pow(-g1, 2) - 1)));
-				Sred[i] = Sred[i - 1] * ((exp((r_ - (Vred[i] / 2.0)) * deltaT + sqrt(abs(Vred[i])) * (rho_ * sd_t * -g1 + srho2 * sd_t * -g2))));
-
+				double v_max = std::max<double>(V[i - 1], 0.0);
+				V[i] = V[i - 1] + (kappa_ * (theta_ - v_max) * (deltaT)) + (eta_ * sqrt(v_max * deltaT) * g1) + (0.25 * (eta_ * eta_) * deltaT * ((g1 * g1) - 1)); // Milsten discretization
+				S[i] = S[i - 1] * exp((r_ - 0.5 * v_max) * deltaT + sqrt(v_max * deltaT) * (rho_ * g1 + srho2 * g2));
+				
+				v_max = std::max<double>(Vred[i - 1], 0.0);
+				Vred[i] = Vred[i - 1] + (kappa_ * (theta_ - v_max) * (deltaT)) + (eta_ * sqrt(abs(v_max)) * sd_t * -g1) + (0.25 * (eta_ * eta_) * deltaT * (pow(-g1, 2) - 1));
+				Sred[i] = Sred[i - 1] * exp((r_ - 0.5 * v_max) * deltaT + sqrt(v_max * deltaT) * (rho_ * -g1 + srho2 * -g2));
 				// Compute the payoff of the option at the final time step
 				if (i == NumberOfPaths_ - 1) {
 					runningSum += (*thePayOff_)(S[i]);
@@ -432,11 +453,13 @@ double Heston::computeVredMT2()
 				double g1 = this->randNums_[j][i - 1][0];
 				double g2 = this->randNums_[j][i - 1][1];
 
-				V[i] = V[i - 1] + (kappa_ * (theta_ - V[i - 1]) * (deltaT)+eta_ * sqrt(abs(V[i - 1])) * sd_t * g1 + 0.25 * (eta_ * eta_) * deltaT * ((g1 * g1) - 1));
-				S[i] = S[i - 1] * (exp((r_ - (V[i] / 2.0)) * deltaT + sqrt(abs(V[i])) * (rho_ * sd_t * g1 + srho2 * sd_t * g2)));
-
-				Vred[i] = Vred[i - 1] + (kappa_ * (theta_ - Vred[i - 1]) * (deltaT)+eta_ * sqrt(abs(Vred[i - 1])) * sd_t * -g1 + 0.25 * (eta_ * eta_) * deltaT * (pow(-g1, 2) - 1));
-				Sred[i] = Sred[i - 1] * (exp((r_ - (Vred[i] / 2.0)) * deltaT + sqrt(abs(Vred[i])) * (rho_ * sd_t * -g1 + srho2 * sd_t * -g2)));
+				double v_max = std::max<double>(V[i - 1], 0.0);
+				V[i] = V[i - 1] + (kappa_ * (theta_ - v_max) * (deltaT)) + (eta_ * sqrt(v_max * deltaT) * g1) + (0.25 * (eta_ * eta_) * deltaT * ((g1 * g1) - 1)); // Milsten discretization
+				S[i] = S[i - 1] * exp((r_ - 0.5 * v_max) * deltaT + sqrt(v_max * deltaT) * (rho_ * g1 + srho2 * g2));
+				
+				v_max = std::max<double>(Vred[i - 1], 0.0);
+				Vred[i] = Vred[i - 1] + (kappa_ * (theta_ - v_max) * (deltaT)) + (eta_ * sqrt(abs(v_max)) * sd_t * -g1) + (0.25 * (eta_ * eta_) * deltaT * (pow(-g1, 2) - 1));
+				Sred[i] = Sred[i - 1] * exp((r_ - 0.5 * v_max) * deltaT + sqrt(v_max * deltaT) * (rho_ * -g1 + srho2 * -g2));
 
 				if (i == NumberOfPaths_ - 1) {
 					localRunningSum += (*thePayOff_)(S[i]);
@@ -685,12 +708,12 @@ void Heston::deltaHedgingSimulaton(double h)
 	std::vector <double> A = std::vector<double>(this->Nmc_ + 1, 0);
 	std::vector <double> V = std::vector<double>(this->Nmc_ + 1);
 
-	int Expiry = this->Expiry_;
+	double Expiry = this->Expiry_;
 	this->Spot_ = path[0];
 	A[0] = computeDelta(0.01);
 	P[0] = path[0] * A[0] - B[0];
 	double deltaT = this->Expiry_ / this->NumberOfPaths_;
-	for(int i = 0 ; i < this->Nmc_+1; i++)
+	for(unsigned int i = 0 ; i < this->Nmc_+1; i++)
 	{
 		P[i+1]= path[i+1] * A[i] - (1+this->r_*(deltaT))*B[i];
 		this->Expiry_ = this->Expiry_ - deltaT;
@@ -829,6 +852,9 @@ void Heston::CalibrationThetaEta(std::vector <double> market, std::vector<double
 	auto size = strike.size();
 	double eta0 = this->eta_;
 	double theta0 = this->theta_;
+	double test_eta(0);
+	double test_theta(0);
+	double resultat(0);
 	Eigen::MatrixXd J(size, 2);
 	Eigen::VectorXd Vheston(size);
 	Eigen::VectorXd Res(size);
@@ -849,7 +875,9 @@ void Heston::CalibrationThetaEta(std::vector <double> market, std::vector<double
 		}
 		d = - ((J.transpose() * J + I).inverse()) * J.transpose() * Res;
 		beta = beta + d;
-
+		test_theta = beta(0);
+		test_eta = beta(1);
+		resultat = d.norm();
 		if ((beta(0) > 1) || (beta(0) < 0))
 		{
 			beta(0) = theta0;
@@ -859,6 +887,7 @@ void Heston::CalibrationThetaEta(std::vector <double> market, std::vector<double
 			beta(1) = eta0;
 		}
 		compteur++;
+		resetRandom();
 		if (compteur == 500)
 		{
 			throw("Limit has been reached : ", compteur);
@@ -874,8 +903,8 @@ void Heston::resetRandom()
 	for (unsigned int j = 0; j < this->Nmc_; ++j) {
 		for (unsigned long i = 0; i < this->NumberOfPaths_; ++i) {
 			// Generate random numbers for each scenario and store in randNums_
-			this->randNums_[j][i][0] = Random::GetOneGaussianByBoxMuller();
-			this->randNums_[j][i][1] = Random::GetOneGaussianByBoxMuller();
+			this->randNums_[j][i][0] = Random::getNormalDistributionEngine(this->random_engine);
+			this->randNums_[j][i][1] = Random::getNormalDistributionEngine(this->random_engine);
 		}
 	}
 }
@@ -885,7 +914,7 @@ void Heston::resetRandomPath()
 	this->randNums_.push_back(std::vector<std::vector<double>>(this->NumberOfPaths_, std::vector<double>(2)));
 	for (unsigned long i = 0; i < this->NumberOfPaths_; ++i) {
 		// Generate random numbers for each scenario and store in randNums_
-		this->randNums_[0][i][0] = Random::GetOneGaussianByBoxMuller();
-		this->randNums_[0][i][1] = Random::GetOneGaussianByBoxMuller();
+		this->randNums_[0][i][0] = Random::getNormalDistributionEngine(this->random_engine);
+		this->randNums_[0][i][1] = Random::getNormalDistributionEngine(this->random_engine);
 	}
 }

@@ -4,6 +4,7 @@
 #include "..\Pricers\Payofss.h"
 #include "..\Numerical Methods\Random.h"
 #include "..\Numerical Methods\Norms.h"
+#include "..\MarketData\MarketData.h"
 
 class Payoffs;
 class Heston
@@ -11,7 +12,7 @@ class Heston
 	public:
 		Heston();
 		~Heston();
-		Heston(Payoffs* thePayOff, double Expiry, double Spot, double r, unsigned long NumberOfPaths, double theta, double eta, double rho, double kappa, double v0, unsigned int Nmc = 1);		
+		Heston(Payoffs* thePayOff, double Expiry, double Spot, double r, unsigned long NumberOfPaths, double theta, double eta, double rho, double kappa, double v0, unsigned int Nmc = 1, int random_engine_in = 0);		
 		std::vector<double> operator()(int seed);
 
 		double compute();
@@ -22,7 +23,7 @@ class Heston
 		double computeVredsMT();
 		double computeVredMT();
 		double computeVredMT2();
-		std::vector<double> pathSimulation(int j);
+		std::vector<double> pathSimulation(int j, bool is_vol = false);
 		double computePriceAsync();//not working
 
 		void CalibrationThetaEta(std::vector <double> market, std::vector<double> Strike, double epsilon, double h, double lambdaa);
@@ -75,19 +76,20 @@ class Heston
 		double mu_;
 		double omega_;
 		double kappa_;
-		 Payoffs *thePayOff_;
+		Payoffs *thePayOff_;
 		double Expiry_;
 		double Spot_;
 		double v0_;
 		double r_;
-		unsigned long NumberOfPaths_;
+		unsigned int NumberOfPaths_;
 		double h_;
 		double theta_;
 		double price_;
 		double rho_;
 		unsigned int Nmc_;
 		std::vector<std::vector<std::vector<double>>> randNums_; // Vector of random numbers for each scenario
-	protected:
+		int random_engine;
+protected:
 		double delta;
 		double gamma;
 		double vega;
@@ -96,5 +98,7 @@ class Heston
 		double eta;
 		double exp_sensi;
 		double diff_time;
+		market::MarketData *marketData; // Market data for calibration
+		
 };
 #endif //HESTON
