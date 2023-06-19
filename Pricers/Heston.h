@@ -27,7 +27,8 @@ class Heston
 		double computePriceAsync();//not working
 
 		void CalibrationThetaEta(std::vector <double> market, std::vector<double> Strike, double epsilon, double h, double lambdaa);
-
+		void CalibrationLM(std::vector <double> market, std::vector<double> strike, double epsilon, double h, double lambda);
+		
 		double computeGamma(double h);
 		double computeDeltaR(double h);
 		double computeGammaR(double h);
@@ -45,6 +46,9 @@ class Heston
 		void computeDeltaAndGammaR(double h);
 		void computeTime(double h);
 		void computeTimeR(double h);
+		void computeV0R(double h);
+		void computerhoR(double h);
+		void computekappaR(double h);
 
 
 		double getGamma();
@@ -59,6 +63,9 @@ class Heston
 
 		void setExpiry(double exp);
 		void setR(double h);
+		void setV0(double h);
+		void setKappa(double h);
+		void setRho(double h);
 		void setSpot(const double spot);
 		void setTheta(const double t);
 		void setEta(double eta);
@@ -73,8 +80,6 @@ class Heston
 	private:
 		std::vector<double> S;
 		double eta_;
-		double mu_;
-		double omega_;
 		double kappa_;
 		Payoffs *thePayOff_;
 		double Expiry_;
@@ -96,6 +101,9 @@ protected:
 		double rho;
 		double theta;
 		double eta;
+		double v0;
+		double kappa;
+
 		double exp_sensi;
 		double diff_time;
 		market::MarketData *marketData; // Market data for calibration

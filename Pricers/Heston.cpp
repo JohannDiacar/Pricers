@@ -31,11 +31,9 @@ Heston::Heston()
 	this->rho = 0;
 	this->eta = 0;
 	this->exp_sensi = 0;
-	this->omega_ = 0;
 	this->theta = 0;
 	this->vega = 0;
 	this->eta_  = 0;
-	this->mu_  = 0;
 	this->kappa_  = 0;
 	this->rho_ = rho;
 	this->v0_ = 0;
@@ -52,8 +50,6 @@ Heston::Heston(Payoffs * thePayOff, double Expiry, double Spot, double r, unsign
 	this->Expiry_ = Expiry;
 	this->Spot_ = Spot;
 	this->r_ = r;
-	this->mu_ = 0;
-	this->omega_ = 0;
 	this->exp_sensi = 0;
 	this->NumberOfPaths_ = NumberOfPaths;
 	this->h_ = 0;
@@ -594,7 +590,18 @@ void Heston::setR(double r)
 {
 	this->r_ = r;
 }
-
+void Heston::setV0(double v0)
+{
+	this->v0_ = v0;
+}
+void Heston::setKappa(double kappa)
+{
+	this->kappa_ = kappa;
+}
+void Heston::setRho(double rho)
+{
+	this->rho_ = rho;
+}
 
 // Estimate the delta of the option using Monte Carlo simulation
 
@@ -772,6 +779,35 @@ void Heston::computeEta(double h)
 	setEta(this->eta_ + h);
 	this->eta = (V_plus - V_minus) / (2 * h);
 }
+void Heston::computeV0R(double h)
+{
+	setV0(this->v0_ + h);
+	double V_plus = computeVred();
+	setV0(this->v0_ - 2 * h);
+	double V_minus = computeVred();
+	setV0(this->v0_ + h);
+	this->v0 = (V_plus - V_minus) / (2 * h);
+}
+void Heston::computerhoR(double h)
+{
+	setRho(this->rho_ + h);
+	double V_plus = computeVred();
+	setRho(this->rho_ - 2 * h);
+	double V_minus = computeVred();
+	setRho(this->rho_ + h);
+	this->rho = (V_plus - V_minus) / (2 * h);
+}
+void Heston::computekappaR(double h)
+{
+	setKappa(this->kappa_ + h);
+	double V_plus = computeVred();
+	setKappa(this->kappa_ - 2 * h);
+	double V_minus = computeVred();
+	setKappa(this->kappa_ + h);
+	this->kappa = (V_plus - V_minus) / (2 * h);
+}
+
+
 
 
 double Heston::getDelta()
@@ -841,7 +877,114 @@ double Heston::computePriceAsync()
 	*/
 	return 0;
 }
+void Heston::CalibrationLM(std::vector <double> market, std::vector<double> strike, double epsilon, double h, double lambda)
+{
+	int compteur = 0;
+	Eigen::VectorXd d(5);
+	d << this->theta_, this->eta_, this->v0_, this->rho_, this->kappa_;
+	Eigen::VectorXd beta(5);
+	beta << this->theta_, this->eta_, this->v0_, this->rho_, this->kappa_;
+	Eigen::VectorXd temp_beta = beta;
+	auto size = strike.size();
+	double eta0 = this->eta_;
+	double theta0 = this->theta_;
+	double v00 = this->v0_;
+	double rho0 = this->rho_;
+	double kappa0 = this->kappa_;
+	double test_eta(0);
+	double test_theta(0);
+	double resultat(2);
+	double temp_resultat(0);
+	Eigen::MatrixXd J(size, 5);
+	Eigen::VectorXd Vheston(size);
+	Eigen::VectorXd Res(size);
+	Eigen::MatrixXd I = lambda * Eigen::MatrixXd::Identity(5,5);
+	while (resultat > epsilon) {
+		//resetRandom();
+		for (int i = 0; i < size; i++)
+		{
+			this->setTheta(beta(0));
+			this->setEta(beta(1));
+			this->v0_ = beta(2);
+			this->rho_ = beta(3);
+			this->kappa_ = beta(4);
+			this->setStrike(strike[i]);
+			Vheston(i) = computeVred();
+			computeThetaR(h);
+			computeEtaR(h);
+			computeV0R(h);
+			computerhoR(h);
+			computekappaR(h);
 
+			Res(i) = market[i] - Vheston(i);
+			J(i, 0) = -this->theta;
+			J(i, 1) = -this->eta;
+			J(i, 2) = -this->v0;
+			J(i, 3) = -this->rho;
+			J(i, 4) = -this->kappa;
+
+		}
+		d = -((J.transpose() * J + I).inverse()) * J.transpose() * Res;
+		temp_resultat = resultat;
+		temp_beta << beta(0), beta(1), beta(2), beta(3), beta(2) ;
+		beta = beta + d;
+		resultat = d.norm();
+		if (compteur == 100)
+		{
+			this->calibrated_vector.push_back(beta(0));
+			this->calibrated_vector.push_back(beta(1));
+			this->calibrated_vector.push_back(beta(2));
+			this->calibrated_vector.push_back(beta(3));
+			this->calibrated_vector.push_back(beta(4));
+			this->calibrated_vector.push_back(std::min<double>(temp_resultat, resultat));
+			this->calibrated_vector.push_back(compteur);
+			return;
+		}
+		if (resultat > temp_resultat)
+		{
+			beta = temp_beta;
+			resultat = temp_resultat;
+			compteur++;
+			resetRandom();
+			continue;
+		}
+		else
+		{
+			I = std::abs<double>(1./(resultat+ 0.5) - 1.4)* Eigen::MatrixXd::Identity(5, 5);
+		}
+		if ((beta(0) > 5) || (beta(0) < 0))
+		{
+			beta(0) = theta0;
+		}
+		if ((beta(1) > 5) || (beta(1) < 0))
+		{
+			beta(1) = eta0;
+		}		
+		if ((beta(2) > 1) || (beta(2) < 0))
+		{
+			beta(2) = v00;
+		}		
+		if ((beta(3) > 1) || (beta(3) < 0))
+		{
+			beta(3) = rho0;
+		}		
+		if ((beta(4) > 5) || (beta(4) < 0))
+		{
+			beta(4) = kappa0;
+		}
+		compteur++;
+		resetRandom();
+
+	}
+	this->calibrated_vector.push_back(beta(0));
+	this->calibrated_vector.push_back(beta(1));
+	this->calibrated_vector.push_back(beta(2));
+	this->calibrated_vector.push_back(beta(3));
+	this->calibrated_vector.push_back(beta(4));
+	this->calibrated_vector.push_back(std::min<double>(temp_resultat, resultat));
+	this->calibrated_vector.push_back(compteur);
+
+}
 void Heston::CalibrationThetaEta(std::vector <double> market, std::vector<double> strike, double epsilon, double h, double lambda)
 {
 	int compteur = 0;
