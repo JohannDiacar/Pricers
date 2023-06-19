@@ -28,7 +28,7 @@ class Heston
 
 		void CalibrationThetaEta(std::vector <double> market, std::vector<double> Strike, double epsilon, double h, double lambdaa);
 		void CalibrationLM(std::vector <double> market, std::vector<double> strike, double epsilon, double h, double lambda);
-		
+		void CalibrationLM2(std::vector <double> market, std::vector<double> strike, double epsilon, double h, double lambda);
 		double computeGamma(double h);
 		double computeDeltaR(double h);
 		double computeGammaR(double h);
@@ -50,6 +50,22 @@ class Heston
 		void computerhoR(double h);
 		void computekappaR(double h);
 
+		static void computeAllCalibrationGreeks(
+			std::vector<double>& results,
+			std::vector<std::vector<std::vector<double>>> randNums_,
+			int NumberOfPaths_,
+			int Nmc,
+			double eta_,
+			double kappa_,
+			Payoffs* thePayOff_,
+			double Expiry_,
+			double Spot_,
+			double v0_,
+			double h,
+			double theta_,
+			double rho_,
+			double r_
+		);
 
 		double getGamma();
 		double getDelta();

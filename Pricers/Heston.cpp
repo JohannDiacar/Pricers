@@ -706,6 +706,104 @@ void Heston::computeTheta(double h)
 	setTheta(this->theta_ + h);
 	this->theta = (V_plus - V_minus) / (2 * h);
 }
+void Heston::computeAllCalibrationGreeks(
+	std::vector<double>& results,
+	std::vector<std::vector<std::vector<double>>> randNums_,
+	int NumberOfPaths_,
+	int Nmc,
+	double eta_,
+	double kappa_,
+	Payoffs* thePayOff_,
+	double Expiry_,
+	double Spot_,
+	double v0_,
+	double h,
+	double theta_,
+	double rho_,
+	double r_
+)
+{
+	auto PriceVred = [&]() -> double
+	{
+	double runningSum = 0;
+
+	double deltaT = (Expiry_ / (double)NumberOfPaths_);
+	double sd_t = sqrt(deltaT);
+	double srho2 = sqrt(1 - (rho_ * rho_));
+	std::vector<double> V(NumberOfPaths_, v0_); // Vector of variance values
+	std::vector<double> S(NumberOfPaths_, Spot_); // Vector of spot price values
+
+	std::vector<double> Vred(NumberOfPaths_, v0_); // Vector of variance values inversed
+	std::vector<double> Sred(NumberOfPaths_, Spot_); // Vector of spot price values inversed
+
+	for (unsigned int j = 0; j < Nmc; ++j)
+	{
+		for (unsigned long i = 1; i < NumberOfPaths_; ++i) {
+			// Generate two independent Gaussian random variables for each time step
+			double g1 = randNums_[j][i - 1][0];
+			double g2 = randNums_[j][i - 1][1];
+
+			// Calculate variance and spot price at the next time step using Euler discretization
+			double v_max = std::max<double>(V[i - 1], 0.0);
+			V[i] = V[i - 1] + (kappa_ * (theta_ - v_max) * (deltaT)) + (eta_ * sqrt(v_max * deltaT) * g1) + (0.25 * (eta_ * eta_) * deltaT * ((g1 * g1) - 1)); // Milsten discretization
+			S[i] = S[i - 1] * exp((r_ - 0.5 * v_max) * deltaT + sqrt(v_max * deltaT) * (rho_ * g1 + srho2 * g2));
+			v_max = std::max<double>(Vred[i - 1], 0.0);
+			Vred[i] = Vred[i - 1] + (kappa_ * (theta_ - v_max) * (deltaT)) + (eta_ * sqrt(abs(v_max)) * sd_t * -g1) + (0.25 * (eta_ * eta_) * deltaT * (pow(-g1, 2) - 1));
+			Sred[i] = Sred[i - 1] * exp((r_ - 0.5 * v_max) * deltaT + sqrt(v_max * deltaT) * (rho_ * -g1 + srho2 * -g2));
+
+			// Compute the payoff of the option at the final time step
+			if (i == NumberOfPaths_ - 1) {
+				runningSum += (*thePayOff_)(S[i]);
+				runningSum += (*thePayOff_)(Sred[i]);
+			}
+			else if (thePayOff_->getOptionsType() == utils::GlobalFlooredCliquet || thePayOff_->getOptionsType() == utils::AutoCall)
+			{
+				runningSum += (*thePayOff_)(S[i]);
+				runningSum += (*thePayOff_)(Sred[i]);
+			}
+		}
+	}
+	double mean = runningSum / (2 * (double)Nmc);
+	mean *= exp(-r_ * Expiry_);
+	return mean;
+	};
+	results.push_back(PriceVred());
+
+	theta_ = theta_ + h;
+	double V_plus = PriceVred();
+	theta_ = theta_ - 2 * h;
+	double V_minus = PriceVred();
+	theta_ = theta_ + h;
+	results.push_back((V_plus - V_minus) / (2*h));
+
+	eta_ = eta_ + h;
+	V_plus = PriceVred();
+	eta_ = eta_ - 2 * h;
+	V_minus = PriceVred();
+	eta_ = eta_ + h;
+	results.push_back((V_plus - V_minus) / (2 * h));
+
+	v0_ = v0_ + h;
+	V_plus = PriceVred();
+	v0_ = v0_ - 2 * h;
+	V_minus = PriceVred();
+	v0_ = v0_ + h;
+	results.push_back((V_plus - V_minus) / (2 * h));
+
+	rho_ = rho_ + h;
+	V_plus = PriceVred();
+	rho_ = rho_ - 2 * h;
+	V_minus = PriceVred();
+	rho_ = rho_ + h;
+	results.push_back((V_plus - V_minus) / (2 * h));
+
+	kappa_ = kappa_ + h;
+	V_plus = PriceVred();
+	kappa_ = kappa_ - 2 * h;
+	V_minus = PriceVred();
+	kappa_ = kappa_ + h;
+	results.push_back((V_plus - V_minus) / (2 * h));
+}
 void Heston::deltaHedgingSimulaton(double h)
 {
 	std::vector <double> B = std::vector<double>(this->Nmc_ + 1,1);
@@ -900,14 +998,15 @@ void Heston::CalibrationLM(std::vector <double> market, std::vector<double> stri
 	Eigen::VectorXd Res(size);
 	Eigen::MatrixXd I = lambda * Eigen::MatrixXd::Identity(5,5);
 	while (resultat > epsilon) {
-		//resetRandom();
-		for (int i = 0; i < size; i++)
-		{
+		//resetRandom();		
 			this->setTheta(beta(0));
 			this->setEta(beta(1));
 			this->v0_ = beta(2);
 			this->rho_ = beta(3);
 			this->kappa_ = beta(4);
+			
+		for (int i = 0; i < size; i++)
+		{
 			this->setStrike(strike[i]);
 			Vheston(i) = computeVred();
 			computeThetaR(h);
@@ -968,6 +1067,115 @@ void Heston::CalibrationLM(std::vector <double> market, std::vector<double> stri
 		{
 			beta(3) = rho0;
 		}		
+		if ((beta(4) > 5) || (beta(4) < 0))
+		{
+			beta(4) = kappa0;
+		}
+		compteur++;
+		resetRandom();
+
+	}
+	this->calibrated_vector.push_back(beta(0));
+	this->calibrated_vector.push_back(beta(1));
+	this->calibrated_vector.push_back(beta(2));
+	this->calibrated_vector.push_back(beta(3));
+	this->calibrated_vector.push_back(beta(4));
+	this->calibrated_vector.push_back(std::min<double>(temp_resultat, resultat));
+	this->calibrated_vector.push_back(compteur);
+
+}
+void Heston::CalibrationLM2(std::vector <double> market, std::vector<double> strike, double epsilon, double h, double lambda)
+{
+	int compteur = 0;
+	Eigen::VectorXd d(5);
+	d << this->theta_, this->eta_, this->v0_, this->rho_, this->kappa_;
+	Eigen::VectorXd beta(5);
+	beta << this->theta_, this->eta_, this->v0_, this->rho_, this->kappa_;
+	Eigen::VectorXd temp_beta = beta;
+	auto size = strike.size();
+	double eta0 = this->eta_;
+	double theta0 = this->theta_;
+	double v00 = this->v0_;
+	double rho0 = this->rho_;
+	double kappa0 = this->kappa_;
+	double test_eta(0);
+	double test_theta(0);
+	double resultat(2);
+	double temp_resultat(0);
+	Eigen::MatrixXd J(size, 5);
+	Eigen::VectorXd Vheston(size);
+	Eigen::VectorXd Res(size);
+	Eigen::MatrixXd I = lambda * Eigen::MatrixXd::Identity(5, 5);
+	while (resultat > epsilon) {
+		this->setTheta(beta(0));
+		this->setEta(beta(1));
+		this->v0_ = beta(2);
+		this->rho_ = beta(3);
+		this->kappa_ = beta(4);
+		for (int i = 0; i < size; i++)
+		{
+			this->setStrike(strike[i]);
+			std::vector<double>results;
+			computeAllCalibrationGreeks(results, this->randNums_, this->NumberOfPaths_, this->Nmc_, this->eta_, this->kappa_, this->thePayOff_, this->Expiry_, this->Spot_, this->v0_, h, this->theta_, this->rho_, this->r_);
+			/*Vheston(i) = computeVred();
+			computeThetaR(h);
+			computeEtaR(h);
+			computeV0R(h);
+			computerhoR(h);
+			computekappaR(h);*/
+
+			Res(i) = market[i] - results[0];
+			J(i, 0) = -results[1];
+			J(i, 1) = -results[2];
+			J(i, 2) = -results[3];
+			J(i, 3) = -results[4];
+			J(i, 4) = -results[5];
+
+		}
+		d = -((J.transpose() * J + I).inverse()) * J.transpose() * Res;
+		temp_resultat = resultat;
+		temp_beta << beta(0), beta(1), beta(2), beta(3), beta(2);
+		beta = beta + d;
+		resultat = d.norm();
+		if (compteur == 100)
+		{
+			this->calibrated_vector.push_back(beta(0));
+			this->calibrated_vector.push_back(beta(1));
+			this->calibrated_vector.push_back(beta(2));
+			this->calibrated_vector.push_back(beta(3));
+			this->calibrated_vector.push_back(beta(4));
+			this->calibrated_vector.push_back(std::min<double>(temp_resultat, resultat));
+			this->calibrated_vector.push_back(compteur);
+			return;
+		}
+		if (resultat > temp_resultat)
+		{
+			beta = temp_beta;
+			resultat = temp_resultat;
+			compteur++;
+			resetRandom();
+			continue;
+		}
+		else
+		{
+			I = std::abs<double>(1. / (resultat + 0.5) - 1.4) * Eigen::MatrixXd::Identity(5, 5);
+		}
+		if ((beta(0) > 5) || (beta(0) < 0))
+		{
+			beta(0) = theta0;
+		}
+		if ((beta(1) > 5) || (beta(1) < 0))
+		{
+			beta(1) = eta0;
+		}
+		if ((beta(2) > 1) || (beta(2) < 0))
+		{
+			beta(2) = v00;
+		}
+		if ((beta(3) > 1) || (beta(3) < 0))
+		{
+			beta(3) = rho0;
+		}
 		if ((beta(4) > 5) || (beta(4) < 0))
 		{
 			beta(4) = kappa0;
