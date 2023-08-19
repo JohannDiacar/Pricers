@@ -13,3 +13,9 @@ class Random
 
 };
 
+class NonRandom
+{
+	public: 
+		NonRandom();
+		static double N(double x);
+};

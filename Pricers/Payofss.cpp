@@ -9,6 +9,12 @@ Payoffs::Payoffs(double Strike_, utils::OptionType TheOptionsType, double _premi
 {
 	this->premium = _premium;
 }
+Payoffs::Payoffs(const Payoffs* pOff)
+{
+	this->strike = pOff->strike;
+	this->TheOptionsType = pOff->TheOptionsType;
+	this->premium = pOff->premium;
+}
 Payoffs::Payoffs(double Strike_, std::string TheOptionsType, double _premium) : strike(Strike_)
 {
 	this->premium = _premium;

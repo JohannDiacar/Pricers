@@ -13,4 +13,5 @@
 #include <vector>
 #include <math.h>
 #include "SimpleMonteCarlo.h"
+#include "integrals/GaussLobatto.h"
 #endif //PCH_H

@@ -112,6 +112,7 @@
       <ConformanceMode>true</ConformanceMode>
       <PrecompiledHeader>Use</PrecompiledHeader>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
+      <AdditionalIncludeDirectories>$(ProjectDir)vcpkg\buildtrees\gsl\x64-windows-rel;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -175,6 +176,9 @@
   <ImportGroup Label="ExtensionTargets">
     <Import Project="..\packages\boost.1.81.0\build\boost.targets" Condition="Exists('..\packages\boost.1.81.0\build\boost.targets')" />
     <Import Project="..\..\xlw-master\xlw-master\xlw\DevAndTestProject\packages\Eigen.3.3.3\build\native\Eigen.targets" Condition="Exists('..\..\xlw-master\xlw-master\xlw\DevAndTestProject\packages\Eigen.3.3.3\build\native\Eigen.targets')" />
+    <Import Project="..\..\xlw-master\xlw-master\xlw\DevAndTestProject\packages\boost.1.82.0\build\boost.targets" Condition="Exists('..\..\xlw-master\xlw-master\xlw\DevAndTestProject\packages\boost.1.82.0\build\boost.targets')" />
+    <Import Project="..\..\xlw-master\xlw-master\xlw\DevAndTestProject\packages\boost_math_tr1-vc143.1.82.0\build\boost_math_tr1-vc143.targets" Condition="Exists('..\..\xlw-master\xlw-master\xlw\DevAndTestProject\packages\boost_math_tr1-vc143.1.82.0\build\boost_math_tr1-vc143.targets')" />
+    <Import Project="..\..\xlw-master\xlw-master\xlw\DevAndTestProject\packages\Microsoft.Gsl.0.1.2.0\build\native\Microsoft.Gsl.targets" Condition="Exists('..\..\xlw-master\xlw-master\xlw\DevAndTestProject\packages\Microsoft.Gsl.0.1.2.0\build\native\Microsoft.Gsl.targets')" />
   </ImportGroup>
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
     <PropertyGroup>
@@ -182,5 +186,8 @@
     </PropertyGroup>
     <Error Condition="!Exists('..\packages\boost.1.81.0\build\boost.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\boost.1.81.0\build\boost.targets'))" />
     <Error Condition="!Exists('..\..\xlw-master\xlw-master\xlw\DevAndTestProject\packages\Eigen.3.3.3\build\native\Eigen.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\xlw-master\xlw-master\xlw\DevAndTestProject\packages\Eigen.3.3.3\build\native\Eigen.targets'))" />
+    <Error Condition="!Exists('..\..\xlw-master\xlw-master\xlw\DevAndTestProject\packages\boost.1.82.0\build\boost.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\xlw-master\xlw-master\xlw\DevAndTestProject\packages\boost.1.82.0\build\boost.targets'))" />
+    <Error Condition="!Exists('..\..\xlw-master\xlw-master\xlw\DevAndTestProject\packages\boost_math_tr1-vc143.1.82.0\build\boost_math_tr1-vc143.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\xlw-master\xlw-master\xlw\DevAndTestProject\packages\boost_math_tr1-vc143.1.82.0\build\boost_math_tr1-vc143.targets'))" />
+    <Error Condition="!Exists('..\..\xlw-master\xlw-master\xlw\DevAndTestProject\packages\Microsoft.Gsl.0.1.2.0\build\native\Microsoft.Gsl.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\xlw-master\xlw-master\xlw\DevAndTestProject\packages\Microsoft.Gsl.0.1.2.0\build\native\Microsoft.Gsl.targets'))" />
   </Target>
 </Project>

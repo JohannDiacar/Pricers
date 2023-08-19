@@ -27,7 +27,7 @@ double Norms::infinityNorm(const std::vector<double>& v) {
 }  
 double Norms::logSquaredDifference(const std::vector<double>& market_prices, const std::vector<double>& model_prices) {
     if (market_prices.size() != model_prices.size()) {
-        throw std::invalid_argument("Market and model prices vectors must have the same size.");
+        throw std::invalid_argument("Market and model prices vectors must have the same size_t.");
     }
 
     double total_error = 0.0;

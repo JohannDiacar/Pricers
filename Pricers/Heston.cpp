@@ -6,10 +6,15 @@
 #include <algorithm>	
 #include <ctime>
 #include <cmath>
+#include <complex>
+#include <boost/math/quadrature/tanh_sinh.hpp>
+#include <boost/math/quadrature/trapezoidal.hpp>
 #include <chrono>
 #include <Eigen/Dense>
 #include <thread>
 #include <mutex>
+#include <gsl/gsl_integration.h>
+
 using std::exp;
 using std::sqrt;
 using std::pow;
@@ -23,6 +28,7 @@ Heston::Heston()
 	this->Expiry_ = 0;
 	this->Spot_ = 0;
 	this->r_ = 0;
+	this->q_ = 0;
 	this->NumberOfPaths_ = 0;
 	this->h_ = 0;
 	this->delta = 0;
@@ -50,23 +56,24 @@ Heston::Heston(Payoffs * thePayOff, double Expiry, double Spot, double r, unsign
 	this->Expiry_ = Expiry;
 	this->Spot_ = Spot;
 	this->r_ = r;
+	this->q_ = 0.;
 	this->exp_sensi = 0;
 	this->NumberOfPaths_ = NumberOfPaths;
-	this->h_ = 0;
-	this->delta = 0;
-	this->gamma = 0;
-	this->rho = 0;
-	this->theta = 0;
-	this->vega = 0;
-	this->theta = 0;
+	this->h_ = 0.;
+	this->delta = 0.;
+	this->gamma = 0.;
+	this->rho = 0.;
+	this->theta = 0.;
+	this->vega = 0.;
+	this->theta = 0.;
 	this->eta_ = eta;
 	this->rho_ = rho;
 	this->v0_ = v0;
 	this->kappa_ = kappa;
 	this->theta_ = theta;
-	this->price_ = 0;
+	this->price_ = 0.;
 	this->Nmc_ = Nmc;
-	this->diff_time = 0;
+	this->diff_time = 0.;
 	this->randNums_ = std::vector<std::vector<std::vector<double>>>(this->Nmc_, std::vector<std::vector<double>>(NumberOfPaths, std::vector<double>(2, 0)));
 	this->random_engine = random_engine_in;
 	for (unsigned int j = 0; j < this->Nmc_; ++j) {
@@ -708,48 +715,42 @@ void Heston::computeTheta(double h)
 }
 void Heston::computeAllCalibrationGreeks(
 	std::vector<double>& results,
-	std::vector<std::vector<std::vector<double>>> randNums_,
-	int NumberOfPaths_,
-	int Nmc,
 	double eta_,
 	double kappa_,
 	Payoffs* thePayOff_,
-	double Expiry_,
-	double Spot_,
 	double v0_,
-	double h,
 	double theta_,
 	double rho_,
-	double r_
+	double h
 )
 {
 	auto PriceVred = [&]() -> double
 	{
 	double runningSum = 0;
 
-	double deltaT = (Expiry_ / (double)NumberOfPaths_);
+	double deltaT = (this->Expiry_ / (double)this->NumberOfPaths_);
 	double sd_t = sqrt(deltaT);
 	double srho2 = sqrt(1 - (rho_ * rho_));
-	std::vector<double> V(NumberOfPaths_, v0_); // Vector of variance values
-	std::vector<double> S(NumberOfPaths_, Spot_); // Vector of spot price values
+	std::vector<double> V(this->NumberOfPaths_, v0_); // Vector of variance values
+	std::vector<double> S(this->NumberOfPaths_, this->Spot_); // Vector of spot price values
 
-	std::vector<double> Vred(NumberOfPaths_, v0_); // Vector of variance values inversed
-	std::vector<double> Sred(NumberOfPaths_, Spot_); // Vector of spot price values inversed
+	std::vector<double> Vred(this->NumberOfPaths_, v0_); // Vector of variance values inversed
+	std::vector<double> Sred(this->NumberOfPaths_, this->Spot_); // Vector of spot price values inversed
 
-	for (unsigned int j = 0; j < Nmc; ++j)
+	for (unsigned int j = 0; j < this->Nmc_; ++j)
 	{
-		for (unsigned long i = 1; i < NumberOfPaths_; ++i) {
+		for (unsigned long i = 1; i < this->NumberOfPaths_; ++i) {
 			// Generate two independent Gaussian random variables for each time step
-			double g1 = randNums_[j][i - 1][0];
-			double g2 = randNums_[j][i - 1][1];
+			double g1 = this->randNums_[j][i - 1][0];
+			double g2 = this->randNums_[j][i - 1][1];
 
 			// Calculate variance and spot price at the next time step using Euler discretization
 			double v_max = std::max<double>(V[i - 1], 0.0);
 			V[i] = V[i - 1] + (kappa_ * (theta_ - v_max) * (deltaT)) + (eta_ * sqrt(v_max * deltaT) * g1) + (0.25 * (eta_ * eta_) * deltaT * ((g1 * g1) - 1)); // Milsten discretization
-			S[i] = S[i - 1] * exp((r_ - 0.5 * v_max) * deltaT + sqrt(v_max * deltaT) * (rho_ * g1 + srho2 * g2));
+			S[i] = S[i - 1] * exp((this->r_ - 0.5 * v_max) * deltaT + sqrt(v_max * deltaT) * (rho_ * g1 + srho2 * g2));
 			v_max = std::max<double>(Vred[i - 1], 0.0);
 			Vred[i] = Vred[i - 1] + (kappa_ * (theta_ - v_max) * (deltaT)) + (eta_ * sqrt(abs(v_max)) * sd_t * -g1) + (0.25 * (eta_ * eta_) * deltaT * (pow(-g1, 2) - 1));
-			Sred[i] = Sred[i - 1] * exp((r_ - 0.5 * v_max) * deltaT + sqrt(v_max * deltaT) * (rho_ * -g1 + srho2 * -g2));
+			Sred[i] = Sred[i - 1] * exp((this->r_ - 0.5 * v_max) * deltaT + sqrt(v_max * deltaT) * (rho_ * -g1 + srho2 * -g2));
 
 			// Compute the payoff of the option at the final time step
 			if (i == NumberOfPaths_ - 1) {
@@ -763,7 +764,7 @@ void Heston::computeAllCalibrationGreeks(
 			}
 		}
 	}
-	double mean = runningSum / (2 * (double)Nmc);
+	double mean = runningSum / (2 * (double)this->Nmc_);
 	mean *= exp(-r_ * Expiry_);
 	return mean;
 	};
@@ -895,6 +896,15 @@ void Heston::computerhoR(double h)
 	setRho(this->rho_ + h);
 	this->rho = (V_plus - V_minus) / (2 * h);
 }
+void Heston::computerho(double h)
+{
+	setRho(this->rho_ + h);
+	double V_plus = compute();
+	setRho(this->rho_ - 2 * h);
+	double V_minus = compute();
+	setRho(this->rho_ + h);
+	this->rho = (V_plus - V_minus) / (2 * h);
+}
 void Heston::computekappaR(double h)
 {
 	setKappa(this->kappa_ + h);
@@ -904,7 +914,15 @@ void Heston::computekappaR(double h)
 	setKappa(this->kappa_ + h);
 	this->kappa = (V_plus - V_minus) / (2 * h);
 }
-
+void Heston::computekappa(double h)
+{
+	setKappa(this->kappa_ + h);
+	double V_plus = compute();
+	setKappa(this->kappa_ - 2 * h);
+	double V_minus = compute();
+	setKappa(this->kappa_ + h);
+	this->kappa = (V_plus - V_minus) / (2 * h);
+}
 
 
 
@@ -937,6 +955,10 @@ double Heston::getExpirationSensi()
 double Heston::getDiffTime()
 {
 	return this->diff_time;
+}
+double Heston::getKappa()
+{
+	return this->kappa;
 }
 void Heston::generateSeeds_()
 {
@@ -1028,7 +1050,7 @@ void Heston::CalibrationLM(std::vector <double> market, std::vector<double> stri
 		temp_beta << beta(0), beta(1), beta(2), beta(3), beta(2) ;
 		beta = beta + d;
 		resultat = d.norm();
-		if (compteur == 100)
+		if (compteur == 5)
 		{
 			this->calibrated_vector.push_back(beta(0));
 			this->calibrated_vector.push_back(beta(1));
@@ -1112,32 +1134,37 @@ void Heston::CalibrationLM2(std::vector <double> market, std::vector<double> str
 		this->v0_ = beta(2);
 		this->rho_ = beta(3);
 		this->kappa_ = beta(4);
+		std::vector<std::thread> threads;
+
 		for (int i = 0; i < size; i++)
 		{
-			this->setStrike(strike[i]);
-			std::vector<double>results;
-			computeAllCalibrationGreeks(results, this->randNums_, this->NumberOfPaths_, this->Nmc_, this->eta_, this->kappa_, this->thePayOff_, this->Expiry_, this->Spot_, this->v0_, h, this->theta_, this->rho_, this->r_);
-			/*Vheston(i) = computeVred();
-			computeThetaR(h);
-			computeEtaR(h);
-			computeV0R(h);
-			computerhoR(h);
-			computekappaR(h);*/
+			threads.push_back(std::thread([&, i]()
+				{
+					std::vector<double>results;
+					Payoffs *local = new Payoffs(this->thePayOff_);
+					local->setStrike(strike[i]);
+					computeAllCalibrationGreeks(results, this->eta_, this->kappa_, local, this->v0_, this->theta_, this->rho_,h);
+					Res(i) = market[i] - results[0];
+					J(i, 0) = -results[1];
+					J(i, 1) = -results[2];
+					J(i, 2) = -results[3];
+					J(i, 3) = -results[4];
+					J(i, 4) = -results[5];
+					delete local;
+				}));
+		}
 
-			Res(i) = market[i] - results[0];
-			J(i, 0) = -results[1];
-			J(i, 1) = -results[2];
-			J(i, 2) = -results[3];
-			J(i, 3) = -results[4];
-			J(i, 4) = -results[5];
-
+		// Attendre que tous les threads se terminent
+		for (auto& thread : threads)
+		{
+			thread.join();
 		}
 		d = -((J.transpose() * J + I).inverse()) * J.transpose() * Res;
 		temp_resultat = resultat;
 		temp_beta << beta(0), beta(1), beta(2), beta(3), beta(2);
 		beta = beta + d;
 		resultat = d.norm();
-		if (compteur == 100)
+		if (compteur == 5)
 		{
 			this->calibrated_vector.push_back(beta(0));
 			this->calibrated_vector.push_back(beta(1));
@@ -1168,11 +1195,11 @@ void Heston::CalibrationLM2(std::vector <double> market, std::vector<double> str
 		{
 			beta(1) = eta0;
 		}
-		if ((beta(2) > 1) || (beta(2) < 0))
+		if ((beta(2) > 5) || (beta(2) < 0))
 		{
 			beta(2) = v00;
 		}
-		if ((beta(3) > 1) || (beta(3) < 0))
+		if ((beta(3) > 5) || (beta(3) < 0))
 		{
 			beta(3) = rho0;
 		}
@@ -1269,3 +1296,459 @@ void Heston::resetRandomPath()
 		this->randNums_[0][i][1] = Random::getNormalDistributionEngine(this->random_engine);
 	}
 }
+
+
+// Dans cette partie nous passons à la résolution analytique de l'équation de Heston
+// Nous allons donc calculer les moments de la solution de l'équation de Heston
+
+double Heston::ForwardPrice(double tau)
+{
+	return this->Spot_ * std::exp((this->r_ -this->q_) * tau);
+}
+std::complex<double> Heston::phi(std::complex<double> x, double tau)
+{
+	std::complex<double> i(0, 1);
+	double forwardPrice = ForwardPrice(tau);
+	std::complex<double > t1 = (i * x) * std::log(forwardPrice / this->Spot_);
+	std::complex <double > xi = this->kappa_ - this->rho_ * this->theta_* x * i;
+	std::complex <double> d = std::sqrt(std::pow(xi,2) + std::pow(this->theta_,2) * (i * x + std::pow(x,2) ) );
+	if (xi == -d) {
+		throw("xi and -d are equal! Division by zero will occur.");
+	}
+	std::complex <double> g1 = (xi + d) / (xi - d);
+	std::complex<double> t2 = ((this->kappa_ * this->eta_)/std::pow(this->theta_,2)) * ( (xi +d) * tau - 2. * std::log((1. - g1 * std::exp(d * tau))/(1. - g1)) );
+	std::complex<double> t3 = ( this->v0_/ std::pow(this->theta_, 2) ) * (xi + d) *( (1. - std::exp(d * tau) ) / ( (1. - g1*std::exp(d * tau)) ) ) ;
+	return std::exp(t1 + t2 + t3);
+}
+std::complex <double> Heston::phii(std::complex<double> x, double tau)
+{
+	std::complex<double> i(0, 1);
+	double forwardPrice = ForwardPrice(tau);
+	std::complex<double > t1 = (i * x) * std::log(forwardPrice / this->Spot_);
+	std::complex <double > xi = this->kappa_ - this->rho_ * this->theta_* x * i;
+	std::complex <double> d = std::sqrt(std::pow(xi, 2) + std::pow(this->theta_, 2) * (i * x + std::pow(x, 2)));
+	if (xi == -d) {
+		throw("xi and -d are equal! Division by zero will occur.");
+	}
+	std::complex <double> g2 = (xi - d) / (xi + d);
+	std::complex<double> t2 = ((this->kappa_ * this->eta_) / std::pow(this->theta_, 2)) * ((xi - d) * tau - 2. * std::log((1. - g2 * std::exp(-d * tau)) / (1. - g2)));
+	std::complex<double> t3 = (this->v0_ / std::pow(this->theta_, 2)) * (xi - d) * ((1. - std::exp(-d * tau)) / ((1. - g2*std::exp(-d * tau))));
+	return std::exp(t1 + t2 + t3);
+}	
+//Commencons par le Call et le Put dans le modèle de Heston
+/*
+double Heston::P1(double K, double tau) {
+	auto integrand = [&](double x) {
+		std::complex<double> i(0, 1);
+		return std::real( ( std::exp(-i * x * std::log(K / this->Spot_)) / (i * x)) * (phii(x - i, tau)/ phii(- i, tau)));
+	};
+
+	double lower_limit = 0;
+	boost::math::quadrature::tanh_sinh<double> integrator;
+	double integral_value = integrator.integrate(integrand, lower_limit);
+
+	return 0.5 + (1 / M_PI) * integral_value;
+}
+double Heston::P2(double K, double tau)
+{
+	auto integrand = [&](double x) {
+		std::complex<double> i(0, 1);
+		return std::real( ( std::exp(-i * x * std::log(K / this->Spot_)) / (i * x)) * phi(x, tau) );
+	};
+
+	double lower_limit = 0;
+	boost::math::quadrature::tanh_sinh<double> integrator;
+	double integral_value = integrator.integrate(integrand, lower_limit);
+
+	return 0.5 + (1 / M_PI) * integral_value;
+}
+double Heston::CallAnalytique(double K, double tau)
+{
+	double p1 = P1(K, tau);
+	double p2 = P2(K, tau);
+	return std::max<double>(0., this->Spot_ * std::exp(-this->r_ * tau) * p1 - K * std::exp(-this->q_ * tau) * p2);
+}
+double Heston::PutAnalytique(double K, double tau)
+{
+	double p1 = P1(K, tau);
+	double p2 = P2(K, tau);
+	return std::max<double>(0., K * std::exp(-this->q_ * tau) * (1 - p2) - this->Spot_ * std::exp(-this->r_ * tau) * (1 - p1)  );
+}
+*/
+double Heston::integrandI1(double u, double K, double tau) {
+	std::complex<double> i(0, 1);
+	std::complex<double> term1 = ( u!=0 ? std::exp(-i * u * std::log(K / this->Spot_))/ (i * u) : std::exp(-i * u * std::log(K / this->Spot_)));
+	std::complex<double> term2 = phi(u - i, tau);
+	return std::real(term1  * term2);
+}
+double Heston::I1(double K, double tau) {
+	auto integrand = [&](double u) {
+		return this->integrandI1(u, K, tau);
+	};
+
+	double lower_limit = 0; 
+	boost::math::quadrature::tanh_sinh<double> integrator;
+	double integral_value = integrator.integrate(integrand, lower_limit);
+
+	return integral_value;
+}
+double Heston::integrandI2(double u, double K, double tau) {
+	std::complex<double> i(0, 1);
+	std::complex<double> term1 = (u != 0 ? std::exp(-i * u * std::log(K / this->Spot_)) / (i * u) : std::exp(-i * u * std::log(K / this->Spot_)));
+	std::complex<double> term2 = phi(u , tau);
+	return std::real(term1 * term2);
+}
+
+double Heston::I2(double K, double tau)
+{
+	auto integrand = [&](double u) {
+		return this->integrandI2(u, K, tau);
+	};
+
+	double lower_limit = 0;
+	boost::math::quadrature::tanh_sinh<double> integrator;
+	double integral_value = integrator.integrate(integrand, lower_limit);
+
+	return integral_value;
+}
+double Heston::CallAnalytique(double K, double tau)
+{
+	double first_term = 0.5 * (this->Spot_ * std::exp(-this->q_ * this->Expiry_) - K * std::exp(-this->r_ * this->Expiry_));
+	double second_term = this->Spot_ * ( I1(K, this->Expiry_) );
+	double third_term = K * I2(K, this->Expiry_);
+	return first_term + (std::exp(-this->r_ * this->Expiry_) / M_PI) * (second_term - third_term );
+}
+
+
+#include <cmath>
+#include <vector>
+#include <complex>
+#include <algorithm>
+#include <functional>
+#include <boost/math/quadrature/trapezoidal.hpp>
+const std::complex<double> i = std::complex<double>(0, 1);
+
+double gamma(double sigma) {
+	return 0.5 * sigma * sigma;
+}
+
+
+double Ralpha(double F, double K, double alpha) {
+	return F * (alpha <= 0) - K * (alpha <= -1) - 0.5 * (F * (alpha == 0) - K * (alpha == -1));
+}
+
+std::complex<double> alphahat(std::complex<double> u) {
+	return -0.5 * u * (i + u);
+}
+
+std::complex<double> beta(std::complex<double> u, double rho, double sigma, double kappa) {
+	return kappa - rho * sigma * u * i;
+}
+
+std::complex<double> D(std::complex<double> u, double rho, double sigma, double kappa) {
+	return std::sqrt(beta(u, rho, sigma, kappa) * beta(u, rho, sigma, kappa) - 4. * alphahat(u) * gamma(sigma));
+}
+
+
+double fzero(std::function<double(double)> func, double x0) {
+	double x = x0, dx = 0.01;
+	for (int i = 0; i < 100; i++) {  // maximum 100 iterations
+		double fx = func(x);
+		if (std::abs(fx) < 1e-6) break;  // convergence tolerance
+		double dfx = (func(x + dx) - fx) / dx;  // numerical derivative
+		x -= fx / dfx;  // Newton-Raphson step
+	}
+	return x;
+}
+std::complex<double> G(std::complex<double> u, double rho, double sigma, double kappa) {
+	return (beta(u, rho, sigma, kappa) - D(u, rho, sigma, kappa)) / (beta(u, rho, sigma, kappa) + D(u, rho, sigma, kappa));
+}
+
+std::complex<double> Bv(std::complex<double> u, double rho, double sigma, double kappa, double tau) {
+	return ((beta(u, rho, sigma, kappa) - D(u, rho, sigma, kappa)) * (1. - std::exp(-D(u, rho, sigma, kappa) * tau))) / (sigma * sigma * (1. - G(u, rho, sigma, kappa) * std::exp(-D(u, rho, sigma, kappa) * tau)));
+}
+std::complex<double> phi2(std::complex<double> u, double rho, double sigma, double kappa, double tau) {
+	return (G(u, rho, sigma, kappa) * std::exp(-D(u, rho, sigma, kappa) * tau) - 1.) / (G(u, rho, sigma, kappa) - 1.);
+}
+std::complex<double> A(std::complex<double> u, double kappa, double theta, double rho, double sigma, double tau) {
+	return (kappa * theta * ((beta(u, rho, sigma, kappa) - D(u, rho, sigma, kappa)) * tau - 2. * std::log(phi2(u, rho, sigma, kappa, tau)))) / (sigma * sigma);
+}
+
+
+std::complex<double> cf(std::complex<double> u, double F, double kappa, double theta, double rho, double sigma, double tau, double v0) {
+	double f = std::log(F);
+
+	return std::exp(i * u * f + A(u, kappa, theta, rho, sigma, tau) + Bv(u, rho, sigma, kappa, tau) * v0);
+}
+
+
+
+
+
+
+
+
+double phi(std::complex<double> v, double K, double alpha, double F, double kappa, double theta, double rho, double sigma, double tau, double v0) {
+	double k = std::log(K);
+	return std::real(std::exp(-i * (v - i * alpha) * k) * (cf(v - i * (alpha + 1.), F, kappa, theta, rho, sigma, tau, v0) / (-(v - i * (alpha + 1.)) * (v - i * alpha))));
+}
+
+double psi(double alpha, double K, double F, double kappa, double theta, double rho, double sigma, double tau, double v0) {
+	double k = std::log(K);
+	return -alpha * k + 0.5 * std::log(phi(-(alpha + 1.) * i, K, alpha, F, kappa, theta, rho, sigma, tau, v0) * phi(-(alpha + 1.) * i, K, alpha, F, kappa, theta, rho, sigma, tau, v0));
+}
+/*
+double integral(std::function<double(double)> f, double a, double b) {
+	gsl_integration_workspace* w = gsl_integration_workspace_alloc(1000);
+
+	gsl_function F;
+	F.function = [](double x, void* params) {
+		std::function<double(double)>* f = static_cast<std::function<double(double)>*>(params);
+		return (*f)(x);
+	};
+	F.params = &f;
+
+	double result, error;
+	gsl_integration_qags(&F, a, b, 0, 1e-7, 1000, w, &result, &error);
+
+	gsl_integration_workspace_free(w);
+
+	return result;
+}
+
+
+std::vector<double> Heston::Heston1993KahlJaeckelLordRev3(double K, double tau, std::vector<double> alphas) {
+	int  PC = 1;
+	double S = this->Spot_;
+	double r = this->r_;
+	double q = this->q_;
+	double mu = r - q;
+	double sigma = this->theta_;
+	double kappa = this->kappa_;
+	double theta = this->theta_;
+	double rho = this->rho_;
+	double v0 = this->v0_;
+	double F = S * std::exp(mu * tau);
+	double alpha0 = 0.75;
+	std::vector<double> prices(alphas.size());
+
+	for (int ind = 0; ind < alphas.size(); ind++) {
+		if (std::isnan(alphas[ind])) {
+			try {
+				alphas[ind] = fzero([&](double a) { return psi(a, K, F, kappa, theta, rho, sigma, tau, v0); }, alpha0);
+			}
+			catch (...) {
+				alphas[ind] = alpha0;
+			}
+		}
+		prices[ind] = Ralpha(F, K, alphas[ind]) + 1 / M_PI * ::integral([&](double x) { return ::phi(std::complex<double>(x,0), K, alphas[ind], F, kappa, theta, rho, sigma, tau, v0); }, 0, std::numeric_limits<double>::infinity());
+		if (PC == 2) {
+			prices[ind] = prices[ind] + K * std::exp(-r * tau) - S * std::exp(-q * tau);
+		}
+	}
+
+	return prices;
+}
+*/
+
+
+double Heston::Heston1993KahlJaeckelLordRev3(double K, double tau, double alpha) {
+	int  PC = 1;
+	double S = this->Spot_;
+	double r = this->r_;
+	double q = this->q_;
+	double mu = r - q;
+	double sigma = this->theta_;
+	double kappa = this->kappa_;
+	double theta = this->theta_;
+	double rho = this->rho_;
+	double v0 = this->v0_;
+	double F = S * std::exp(mu * tau);
+	double alpha0 = 0.75;
+	auto integrand = [&](double x) { return ::phi(x, K, alpha, F, kappa, theta, rho, sigma, tau, v0); };
+	double integral = boost::math::quadrature::trapezoidal(integrand, 0.0, double(this->Nmc_));
+
+	double price = Ralpha(F, K, alpha) + 1 / M_PI * integral;
+
+	if (PC == 2) {
+		price = price + K * exp(-r * tau) - S * exp(-q * tau);
+	}
+
+	return price;
+}
+
+double Heston::PrixSchoutens(double K, double tau) {
+	auto integrandSchoutensUI = [&](double u, double K, double tau)
+	{
+		std::complex<double> i(0, 1);
+		std::complex<double> term1 = std::exp(-i * u * std::log(K / this->Spot_))  ;
+		std::complex<double> term2 = HestonCharacteristicSchoutens(u - i, K, tau);
+		return std::real(term1 * term2 / (i * u));
+
+	};
+	auto integrandSchoutensU = [&](double u, double K, double tau)
+	{
+		std::complex<double> i(0, 1);
+		std::complex<double> term1 = std::exp(-i * u * std::log(K / this->Spot_)) ;
+		std::complex<double> term2 = HestonCharacteristicSchoutens(u, K, tau);
+		return std::real(term1 * term2/ (i * u));
+	};
+	auto integrand_u_i = [&](double u) {
+		return integrandSchoutensUI(u, K, tau);
+	};
+	auto integrand_u = [&](double u) {
+		return integrandSchoutensU(u, K, tau);
+	};
+	auto prix = [&](double integrand_u_i, double integrand_u, double K, double tau)
+	{
+		double term_1 = 0.5 * (this->Spot_ * std::exp(-this->q_ * tau)) - K * std::exp(-this->r_ * tau) ;
+		double term_2 = (this->Spot_ * integrand_u_i);
+		double term_3 = K * integrand_u;
+
+			return term_1 + (std::exp(-this->r_ * tau) / M_PI) * (term_2 - term_3);
+	};
+	
+	double lower_limit = 0.000001;
+	double upper_limit = 150;
+	//boost::math::quadrature::trapezoidal<double> integrator;
+	double integral_value_u_i = boost::math::quadrature::trapezoidal(integrand_u_i, lower_limit, upper_limit);
+	double integral_value_u = boost::math::quadrature::trapezoidal(integrand_u, lower_limit, upper_limit);
+
+	return prix(integral_value_u_i, integral_value_u, K, tau);
+}
+double Heston::PrixCui(double K, double tau) {
+	auto integrandCuiUI = [&](double u, double K, double tau)
+	{
+		std::complex<double> i(0, 1);
+		std::complex<double> term1 = std::exp(-i * u * std::log(K / this->Spot_));
+		std::complex<double> term2 = HestonCharacteristicCui(u - i, K, tau);
+		return std::real(term1 * term2 / (i * u));
+
+	};
+	auto integrandCuiU = [&](double u, double K, double tau)
+	{
+		std::complex<double> i(0, 1);
+		std::complex<double> term1 = std::exp(-i * u * std::log(K / this->Spot_));
+		std::complex<double> term2 = HestonCharacteristicCui(u, K, tau);
+		return std::real(term1 * term2 / (i * u));
+	};
+	auto integrand_u_i = [&](double u) {
+		return integrandCuiUI(u, K, tau);
+	};
+	auto integrand_u = [&](double u) {
+		return integrandCuiU(u, K, tau);
+	};
+	auto prix = [&](double integrand_u_i, double integrand_u, double K, double tau)
+	{
+		double term_1 = 0.5 * (this->Spot_ * std::exp(-this->q_ * tau)) - K * std::exp(-this->r_ * tau);
+		double term_2 = (this->Spot_ * integrand_u_i);
+		double term_3 = K * integrand_u;
+
+		return term_1 + (std::exp(-this->r_ * tau) / M_PI) * (term_2 - term_3);
+	};
+
+	double lower_limit = 0.000001;
+	double upper_limit = 150;
+	//boost::math::quadrature::trapezoidal<double> integrator;
+	double integral_value_u_i = boost::math::quadrature::trapezoidal(integrand_u_i, lower_limit, upper_limit);
+	double integral_value_u = boost::math::quadrature::trapezoidal(integrand_u, lower_limit, upper_limit);
+
+	return prix(integral_value_u_i, integral_value_u, K, tau);
+}
+std::complex<double> Heston::HestonCharacteristicSchoutens(std::complex<double> x, double K, double tau)
+{
+	std::complex<double> i = std::complex<double>(0, 1);
+	std::complex<double> first_term = i * x * std::log(this->Spot_ * std::exp((this->r_ - this->q_)* this->Expiry_) / this->Spot_);
+
+	std::complex<double> xi = this->kappa_ - this->rho_ * this->theta_ * x * i;
+	std::complex<double> d = std::sqrt(std::pow(xi, 2) + std::pow(this->theta_, 2) * (i * x + std::pow(x, 2)));
+	std::complex<double> g2 = (xi - d) / (xi + d);
+
+	std::complex<double> second_term = (this->kappa_ * this->eta_ / std::pow(this->theta_, 2)) * (((xi - d) * tau) - (2.0 * std::log((1.0 - g2 * std::exp(-d * tau)) / (1.0 - g2))));
+
+	std::complex<double> third_term = ((this->v0_ / std::pow(this->theta_, 2)) * (xi - d)) * ((1.0 - std::exp(-d * tau)) / (1.0 - g2 * std::exp(-d * tau)));
+
+	return std::exp(first_term + second_term + third_term);
+
+}
+
+void Heston::analyticGreeks(double x, double K, double tau, std::vector<std::complex<double>> &out_greeks)
+{
+	out_greeks = std::vector<std::complex<double>>(5, 0.);
+	std::complex<double> xi = this->kappa_ - this->rho_ * this->theta_ * x * i;
+	std::complex<double> d = std::sqrt(std::pow(xi, 2) + std::pow(this->theta_, 2) * (i * x + std::pow(x, 2)));
+
+	std::complex<double> A1 = (x * x + i * x) * std::sinh((d * tau) / 2.);
+	std::complex<double>A2 = ((d / this->v0_) * std::cosh((d * tau) / 2.)) + (xi / this->v0_) * std::sinh((d * tau) / 2.);
+	std::complex<double> A = A1 / A2;
+
+	std::complex <double> B = (d * std::exp(this->kappa_ * tau / 2.)) / (this->v0_ * A2);
+
+	std::complex <double> D = std::log(d / this->v0_) + (((this->kappa_ - d) * tau) / 2.) - std::log(((d + xi) / (2. * this->v0_)) + ((d - xi) / (2. * this->v0_)) * std::exp(-d * tau));
+	
+	std::complex<double> d_A2_d_Rho = -(this->theta_ * i * x * (2. + xi * tau)) / (2. * d * this->v0_) * ((xi * std::cosh((d * tau) / 2.)) + (d * std::sinh((d * tau) / 2.)));
+	std::complex<double> d_d_d_rho = -(xi * this->theta_ * i * x) / d;
+	std::complex<double> d_B_d_rho = (std::exp( (this->kappa_ * tau) / 2.)) / ( this->v0_ ) * ( ( ( 1. / A2 ) * d_d_d_rho ) - ( ( d/std::pow(A2,2) ) * d_A2_d_Rho ) );
+	std::complex<double> d_A1_d_Rho = ( i * x * ( x * x + x* i ) * tau * xi * this->theta_ ) / ( 2. * d ) * std::cosh( ( d * tau ) / 2.);
+	std::complex<double> d_A_d_Rho = ( 1. / A2 ) * ( d_A1_d_Rho ) - ( A / A2 ) * ( d_A2_d_Rho );
+	std::complex<double> d_A_d_kappa = ( (i) / ( this->theta_ * x ) ) * d_A_d_Rho;
+	
+	std::complex<double> d_B_d_kappa = ((i) / (this->theta_ * x)) * d_B_d_rho + ( (B * tau) / 2.);
+	std::complex<double> d_phi_d_kappa = HestonCharacteristicCui(x, K, tau) * (-d_A_d_kappa + ((2. * this->eta_) / (std::pow(this->theta_, 2)) * (std::log(B) + ((this->kappa_ / B) * d_B_d_kappa))) - ((this->eta_ * this->rho_ * tau * i * x) / this->theta_));
+	
+	std::complex<double> d_d_d_theta = ( ( this->rho_/ this->theta_ ) - ( 1./ xi ) ) * ( d_d_d_rho ) + ( this->theta_ * x * x ) / ( d );
+	std::complex<double> d_A1_d_theta = ( ( (x * x + x * i) * tau ) / 2.) * d_d_d_theta * std::cosh( ( d * tau ) / 2.);
+	std::complex<double> d_A2_d_theta = ( this->rho_ / this->theta_ ) * d_A2_d_Rho - ( ( 2. + tau *xi ) * d_A1_d_Rho / ( this->v0_ * tau * xi * i * x ) ) + ( this->theta_ * tau * A1) /  (2. * this->v0_);
+	std::complex<double> d_A_d_theta = ( (1. / A2) * d_A1_d_theta ) - ( (A/A2) * d_A2_d_theta );
+	out_greeks[0] = -A/ this->v0_;
+	out_greeks[1] = (2. * this->kappa_ / std::pow(this->theta_, 2)) * D - (this->kappa_ * tau * i * x) / this->theta_;
+	out_greeks[2] = d_A_d_Rho + ( 2. * this->kappa_ * this->eta_ ) / ( std::pow( this->theta_, 2 ) * d ) * ( ( d_d_d_rho ) - ( ( d/A2 ) * d_A2_d_Rho ) ) - ( this->kappa_ * this->eta_ * tau * i * x ) / ( this->theta_ );
+	out_greeks[3] = ((1. / (this->theta_ * i * x)) * d_A_d_Rho) + ( (2. * this->eta_) / std::pow(this->theta_, 2) ) * ( D + ( this->kappa_ / B ) * d_B_d_kappa ) - (this->rho_ * this->eta_ * tau * i * x) / (this->theta_);
+	out_greeks[4] = -d_A_d_theta - ( ( 4. * this->kappa_ * this->eta_ ) / std::pow(this->theta_, 3) ) * D + (2. * this->kappa_ * this->eta_) / (std::pow(this->theta_, 2) * d) * ((d_d_d_theta)-((d / A2) * d_A2_d_theta)) + (this->kappa_ * this->eta_ * this->rho_ * tau * i * x) / (std::pow(this->theta_, 2));
+
+}
+
+std::complex<double> Heston::HestonCharacteristicDelBanoRollin(std::complex<double> x, double K, double tau)
+{
+	std::complex<double> i(0, 1);
+	double forwardPrice = this->Spot_ * std::exp(this->r_ * tau);
+	std::complex<double> t1 = i * x * std::log(forwardPrice / this->Spot_);
+
+	std::complex<double> xi = this->kappa_ - this->rho_ * this->theta_ * x * i;
+	std::complex<double> d = std::sqrt(std::pow(xi, 2) + std::pow(this->theta_, 2) * (i * x + std::pow(x, 2)));
+
+	std::complex<double> t2 = (1 / this->theta_) * (this->kappa_ * this->eta_ * this->rho_ * tau * i * x);
+
+	std::complex<double> A1 = (x * x + i * x) * std::sinh((d * tau) / 2.);
+	std::complex<double>A2 = ((d / this->v0_) * std::cosh((d * tau) / 2.)) + (xi / this->v0_) * std::sinh((d * tau) / 2.);
+	std::complex<double> A = A1 / A2;
+
+	std::complex <double> B = (d * std::exp(this->kappa_ * tau / 2.)) / (this->v0_ * A2);
+	std::complex <double> power = (2. * this->kappa_ * this->eta_) / std::pow(this->theta_, 2);
+	std::complex<double> t3 = std::pow(B, power);
+
+	return std::exp(t1 - t2 - A) * t3;
+
+}
+
+
+std::complex<double> Heston::HestonCharacteristicCui(std::complex<double> x, double K, double tau)
+{
+	std::complex<double> i = std::complex<double>(0, 1);
+	std::complex<double> first_term = i * x * std::log(this->Spot_ * std::exp(this->r_) / this->Spot_);
+
+	std::complex<double> xi = this->kappa_ - this->rho_ * this->theta_ * x * i;
+	std::complex<double> d = std::sqrt(std::pow(xi, 2) + std::pow(this->theta_, 2) * (i * x + std::pow(x, 2)));
+
+	std::complex<double> second_term = (1 / this->theta_) * (this->kappa_ * this->eta_ * this->rho_ * tau * i * x);
+
+	std::complex<double> A1 = (x * x + i * x) * std::sinh((d * tau) / 2.);
+	std::complex<double>A2 = ((d / this->v0_) * std::cosh((d * tau) / 2.)) + (xi / this->v0_) * std::sinh((d * tau) / 2.);
+	std::complex<double> A = A1 / A2;
+
+	std::complex <double> D = std::log(d / this->v0_) + (((this->kappa_ - d) * tau) / 2.) - std::log(((d + xi) / (2. * this->v0_)) + ((d - xi) / (2. * this->v0_)) * std::exp(-d * tau));
+	std::complex<double> third_term = ((2 * this->kappa_ * this->eta_) / std::pow(this->theta_, 2)) * D;
+
+	return std::exp(first_term - second_term - A + third_term);
+}
+

@@ -52,13 +52,23 @@ double Random::getOneGaussianByBoxMuller()
 	double result;
 	double x;
 	double y;
-	double sizeSquared;
+	double size_tSquared;
 	do
 	{
 		x = 2.0 * rand() / static_cast<double>(RAND_MAX) - 1;
 		y = 2.0 * rand() / static_cast<double>(RAND_MAX) - 1;
-		sizeSquared = x * x + y * y;
-	} while(sizeSquared >= 1.0);
-	result = x * sqrt(-2 * log(sizeSquared) / sizeSquared);
+		size_tSquared = x * x + y * y;
+	} while(size_tSquared >= 1.0);
+	result = x * sqrt(-2 * log(size_tSquared) / size_tSquared);
 	return result;
+}
+
+NonRandom::NonRandom()
+{
+}
+
+double NonRandom::N(double x)
+{
+	//Normal distribution cumulative density function
+	return 0.5 * (1.0 + std::erf(x / std::sqrt(2.0)));
 }

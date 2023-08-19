@@ -114,10 +114,10 @@ double SimpleMonteCarlo::computeMT()
 		runningSum += localRunningSum;
 	};
 
-	unsigned int blockSize = NumberOfPaths_ / numThreads;
+	unsigned int blocksize_t = NumberOfPaths_ / numThreads;
 	for (unsigned int i = 0; i < numThreads; ++i) {
-		unsigned int start = i * blockSize;
-		unsigned int end = (i == (numThreads - 1)) ? NumberOfPaths_ : (i + 1) * blockSize;
+		unsigned int start = i * blocksize_t;
+		unsigned int end = (i == (numThreads - 1)) ? NumberOfPaths_ : (i + 1) * blocksize_t;
 
 		threads[i] = std::thread(worker, start, end);
 	}
@@ -170,10 +170,10 @@ double SimpleMonteCarlo::computeMTPath()
 		runningSum += localRunningSum;
 	};
 
-	unsigned int blockSize = NumberOfPaths_ / numThreads;
+	unsigned int blocksize_t = NumberOfPaths_ / numThreads;
 	for (unsigned int i = 0; i < numThreads; ++i) {
-		unsigned int start = i * blockSize;
-		unsigned int end = (i == (numThreads - 1)) ? NumberOfPaths_ : (i + 1) * blockSize;
+		unsigned int start = i * blocksize_t;
+		unsigned int end = (i == (numThreads - 1)) ? NumberOfPaths_ : (i + 1) * blocksize_t;
 
 		threads[i] = std::thread(worker, start, end);
 	}
@@ -433,7 +433,7 @@ double SimpleMonteCarlo::getTheta()
 void SimpleMonteCarlo::generateSeeds_()
 {
 	/*
-	seeds_.resize(NumberOfPaths_);
+	seeds_.resize_t(NumberOfPaths_);
 
 	// This is a contrived way of setting a different seed for 
 	// each scenario.  There are more robust ways to do this if desired.
@@ -445,14 +445,14 @@ double SimpleMonteCarlo::computePriceAsync()
 	/*
 	generateSeeds_();
 
-	using realVector = std::vector<double>;
-	std::vector<std::future<realVector> > futures;
+	using doubleVector = std::vector<double>;
+	std::vector<std::future<doubleVector> > futures;
 	futures.reserve(this->NumberOfPaths_);
 	for (auto& seed : seeds_)
 	{
 		futures.push_back(std::async(*this, seed));
 	}
-	realVector discountedPayoffs;
+	doubleVector discountedPayoffs;
 	discountedPayoffs.reserve(this->NumberOfPaths_);
 	for (auto& future : futures)
 	{

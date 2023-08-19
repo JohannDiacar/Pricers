@@ -70,6 +70,9 @@
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <ExternalIncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath);C:\Users\johan\source\repos\xlw-master\xlw-master\xlw\DevAndTestProject\packages\boost.1.82.0\lib\native\include;</ExternalIncludePath>
+  </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
@@ -110,8 +113,9 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_DEBUG;NUMERICALMETHODS_EXPORTS;_WINDOWS;_USRDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <PrecompiledHeader>Use</PrecompiledHeader>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
+      <AdditionalIncludeDirectories>C:\Users\johan\source\repos\xlw-master\xlw-master\xlw\DevAndTestProject\packages\boost.1.82.0\lib\native\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -140,6 +144,37 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="framework.h" />
+    <ClInclude Include="integrals\all.hpp" />
+    <ClInclude Include="integrals\array.hpp" />
+    <ClInclude Include="integrals\comparison.hpp" />
+    <ClInclude Include="integrals\config.msvc.hpp" />
+    <ClInclude Include="integrals\discreteintegrals.hpp" />
+    <ClInclude Include="integrals\errors.hpp" />
+    <ClInclude Include="integrals\exponentialintegrals.hpp" />
+    <ClInclude Include="integrals\filonintegral.hpp" />
+    <ClInclude Include="integrals\functional.hpp" />
+    <ClInclude Include="integrals\gammadistribution.hpp" />
+    <ClInclude Include="integrals\gaussianorthogonalpolynomial.hpp" />
+    <ClInclude Include="integrals\gaussianquadratures.hpp" />
+    <ClInclude Include="integrals\gausslaguerrecosinepolynomial.hpp" />
+    <ClInclude Include="integrals\GaussLobatto.h" />
+    <ClInclude Include="integrals\gausslobattointegral.hpp" />
+    <ClInclude Include="integrals\integral.hpp" />
+    <ClInclude Include="integrals\kronrodintegral.hpp" />
+    <ClInclude Include="integrals\matrix.hpp" />
+    <ClInclude Include="integrals\momentbasedgaussianpolynomial.hpp" />
+    <ClInclude Include="integrals\null.hpp" />
+    <ClInclude Include="integrals\qldefines.hpp" />
+    <ClInclude Include="integrals\segmentintegral.hpp" />
+    <ClInclude Include="integrals\shared_ptr.hpp" />
+    <ClInclude Include="integrals\simpsonintegral.hpp" />
+    <ClInclude Include="integrals\steppingiterator.hpp" />
+    <ClInclude Include="integrals\symmetricschurdecomposition.hpp" />
+    <ClInclude Include="integrals\tanhsinhintegral.hpp" />
+    <ClInclude Include="integrals\tqreigendecomposition.hpp" />
+    <ClInclude Include="integrals\trapezoidintegral.hpp" />
+    <ClInclude Include="integrals\twodimensionalintegral.hpp" />
+    <ClInclude Include="integrals\types.hpp" />
     <ClInclude Include="Norms.h" />
     <ClInclude Include="pch.h" />
     <ClInclude Include="Random.h" />
@@ -147,6 +182,23 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="dllmain.cpp" />
+    <ClCompile Include="integrals\discreteintegrals.cpp">
+      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">../pch.h</PrecompiledHeaderFile>
+    </ClCompile>
+    <ClCompile Include="integrals\errors.cpp" />
+    <ClCompile Include="integrals\exponentialintegrals.cpp" />
+    <ClCompile Include="integrals\filonintegral.cpp" />
+    <ClCompile Include="integrals\gammadistribution.cpp" />
+    <ClCompile Include="integrals\gaussianorthogonalpolynomial.cpp" />
+    <ClCompile Include="integrals\gaussianquadratures.cpp" />
+    <ClCompile Include="integrals\GaussLobatto.cpp" />
+    <ClCompile Include="integrals\gausslobattointegral.cpp" />
+    <ClCompile Include="integrals\integral.cpp" />
+    <ClCompile Include="integrals\kronrodintegral.cpp" />
+    <ClCompile Include="integrals\matrix.cpp" />
+    <ClCompile Include="integrals\segmentintegral.cpp" />
+    <ClCompile Include="integrals\symmetricschurdecomposition.cpp" />
+    <ClCompile Include="integrals\tqreigendecomposition.cpp" />
     <ClCompile Include="Norms.cpp" />
     <ClCompile Include="pch.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
@@ -158,16 +210,19 @@
     <ClCompile Include="SimpleMonteCarlo.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="integrals\Makefile.am" />
     <None Include="packages.config" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
     <Import Project="..\packages\boost.1.81.0\build\boost.targets" Condition="Exists('..\packages\boost.1.81.0\build\boost.targets')" />
+    <Import Project="..\..\xlw-master\xlw-master\xlw\DevAndTestProject\packages\boost.1.82.0\build\boost.targets" Condition="Exists('..\..\xlw-master\xlw-master\xlw\DevAndTestProject\packages\boost.1.82.0\build\boost.targets')" />
   </ImportGroup>
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
     <PropertyGroup>
       <ErrorText>Ce projet fait référence à des packages NuGet qui sont manquants sur cet ordinateur. Utilisez l'option de restauration des packages NuGet pour les télécharger. Pour plus d'informations, consultez http://go.microsoft.com/fwlink/?LinkID=322105. Le fichier manquant est : {0}.</ErrorText>
     </PropertyGroup>
     <Error Condition="!Exists('..\packages\boost.1.81.0\build\boost.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\boost.1.81.0\build\boost.targets'))" />
+    <Error Condition="!Exists('..\..\xlw-master\xlw-master\xlw\DevAndTestProject\packages\boost.1.82.0\build\boost.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\xlw-master\xlw-master\xlw\DevAndTestProject\packages\boost.1.82.0\build\boost.targets'))" />
   </Target>
 </Project>

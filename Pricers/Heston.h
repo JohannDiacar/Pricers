@@ -5,7 +5,7 @@
 #include "..\Numerical Methods\Random.h"
 #include "..\Numerical Methods\Norms.h"
 #include "..\MarketData\MarketData.h"
-
+#include <complex>
 class Payoffs;
 class Heston
 {
@@ -49,22 +49,18 @@ class Heston
 		void computeV0R(double h);
 		void computerhoR(double h);
 		void computekappaR(double h);
+		void computerho(double h);
+		void computekappa(double h);
 
-		static void computeAllCalibrationGreeks(
-			std::vector<double>& results,
-			std::vector<std::vector<std::vector<double>>> randNums_,
-			int NumberOfPaths_,
-			int Nmc,
+		void computeAllCalibrationGreeks(
+			std::vector<double>& _results,
 			double eta_,
 			double kappa_,
 			Payoffs* thePayOff_,
-			double Expiry_,
-			double Spot_,
 			double v0_,
-			double h,
 			double theta_,
 			double rho_,
-			double r_
+			double h
 		);
 
 		double getGamma();
@@ -74,6 +70,7 @@ class Heston
 		double getEta();
 		double getExpirationSensi();
 		double getDiffTime();
+		double getKappa();
 
 		void generateSeeds_();
 
@@ -93,6 +90,27 @@ class Heston
 		std::vector <double> calibrated_vector;
 		std::vector<std::vector<double>> volatilityModeling(int Nx, int Nmc, double rho);
 
+		double ForwardPrice(double tau);
+		std::complex<double> phi(std::complex<double> x, double tau);
+		std::complex<double> phii(std::complex<double> x, double tau);
+
+		double I1(double K, double tau);
+		double integrandI1(double u, double K, double tau);
+		double integrandI2(double u, double K, double tau);
+
+		double I2(double K, double tau);
+		double CallAnalytique(double K, double tau);
+		double PutAnalytique(double K, double tau);
+
+		double Heston1993KahlJaeckelLordRev3(double K, double tau, double alpha);
+
+		double PrixSchoutens(double K, double tau);
+		double PrixCui(double K, double tau);
+		std::complex<double> HestonCharacteristicSchoutens(std::complex<double> u, double K, double tau);
+		std::complex<double> HestonCharacteristicDelBanoRollin(std::complex<double> u, double K, double tau);
+		std::complex<double> HestonCharacteristicCui(std::complex<double> u, double K, double tau);
+
+		void analyticGreeks(double x, double K, double tau, std::vector<std::complex<double>> &out_greks);
 	private:
 		std::vector<double> S;
 		double eta_;
@@ -102,6 +120,7 @@ class Heston
 		double Spot_;
 		double v0_;
 		double r_;
+		double q_;
 		unsigned int NumberOfPaths_;
 		double h_;
 		double theta_;

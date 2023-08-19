@@ -18,7 +18,7 @@ namespace market
 		std::vector<double> strikes;
 		std::vector<double> maturities;
 		std::vector<double> price;
-		int size;
+		size_t size;
 
 	};
 }

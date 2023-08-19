@@ -71,6 +71,7 @@ class Payoffs
 	public:
 		Payoffs(double Strike_, utils::OptionType TheOptionsType, double _premium = 1);
 		Payoffs(double Strike_, std::string TheOptionsType, double _premium = 1);
+		Payoffs(const Payoffs* pOff);
 		double operator()(double Spot) const;
 		void setStrike(const double strike);
 		void setGlobalFlooredCliquet(double	_cap, double _floor, double S0, double S1);
