@@ -5,6 +5,7 @@
 #include "..\Numerical Methods\Random.h"
 #include "..\Numerical Methods\Norms.h"
 #include "..\MarketData\MarketData.h"
+#include "..\Numerical Methods/integrals/gausslobattointegral.hpp"
 #include <complex>
 class Payoffs;
 class Heston
@@ -12,9 +13,11 @@ class Heston
 	public:
 		Heston();
 		~Heston();
+		Heston(const Heston& source, bool random = false);
 		Heston(Payoffs* thePayOff, double Expiry, double Spot, double r, unsigned long NumberOfPaths, double theta, double eta, double rho, double kappa, double v0, unsigned int Nmc = 1, int random_engine_in = 0);		
 		std::vector<double> operator()(int seed);
 
+		double computeSansMilstein();
 		double compute();
 		double computesMT();
 		double computeMT();
@@ -27,8 +30,12 @@ class Heston
 		double computePriceAsync();//not working
 
 		void CalibrationThetaEta(std::vector <double> market, std::vector<double> Strike, double epsilon, double h, double lambdaa);
-		void CalibrationLM(std::vector <double> market, std::vector<double> strike, double epsilon, double h, double lambda);
-		void CalibrationLM2(std::vector <double> market, std::vector<double> strike, double epsilon, double h, double lambda);
+
+		void CalibrationLMTikv0(std::vector <double> market, std::vector<double> strike, double epsilon, double h, double lambda, std::vector <double>& matRes, bool isAnalitycal = false);
+		void CalibrationLM(std::vector <double> market, std::vector<double> strike, double epsilon, double h, double lambda, bool isAnalitycal = false);
+		void CalibrationLM2(std::vector <double> market, std::vector<double> strike, double epsilon, double h, double lambda, std::vector <double>& matRes, bool isAnalitycal = false);
+		void CalibrationLM3(std::vector <double> market, std::vector<double> strike, std::vector<double> expiry, double epsilon, double h, double lambda, std::vector <double>& matRes, bool isAnalitycal = false);
+		void CalibrationLMTik(std::vector <double> market, std::vector<double> strike, double epsilon, double h, double lambda, std::vector <double>& matRes, bool isAnalitycal = false);
 		double computeGamma(double h);
 		double computeDeltaR(double h);
 		double computeGammaR(double h);
@@ -51,6 +58,29 @@ class Heston
 		void computekappaR(double h);
 		void computerho(double h);
 		void computekappa(double h);
+
+		void  computeAllAnalitycalCalibrationGreeks(
+			std::vector<double>& _results,
+			double eta_,
+			double kappa_,
+			double K,
+			double v0_,
+			double theta_,
+			double rho_,
+			double h
+		);
+		void  computeAllGreeksCentralDerivative(
+			std::vector<double>& _results,
+			double eta_,
+			double kappa_,
+			double K,
+			double v0_,
+			double theta_,
+			double rho_,
+			double h
+		);
+		
+		void VolImpliBS(double T, double K, double r, double S0, double& vol_guess, double call_value);
 
 		void computeAllCalibrationGreeks(
 			std::vector<double>& _results,
@@ -106,11 +136,13 @@ class Heston
 
 		double PrixSchoutens(double K, double tau);
 		double PrixCui(double K, double tau);
+		double PrixCui2(double K, double tau, double lower_limit, double upper_limit, double max_rep, double precision);
 		std::complex<double> HestonCharacteristicSchoutens(std::complex<double> u, double K, double tau);
 		std::complex<double> HestonCharacteristicDelBanoRollin(std::complex<double> u, double K, double tau);
 		std::complex<double> HestonCharacteristicCui(std::complex<double> u, double K, double tau);
-
-		void analyticGreeks(double x, double K, double tau, std::vector<std::complex<double>> &out_greks);
+		void CallGradient(double K, double tau, std::vector<double>& out_gradient);
+		void CallGradientWithoutV0(double K, double tau, std::vector<double>& out_gradient);
+		void HVectorForCall(std::complex<double> x, double K, double tau, std::vector<std::complex<double>> &out_greks);
 	private:
 		std::vector<double> S;
 		double eta_;

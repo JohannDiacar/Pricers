@@ -7,6 +7,7 @@
 #include <algorithm>	
 #include <ctime>
 #include <cmath>
+#include "integrals/qldefines.hpp"
 
 using std::vector;
 using std::mt19937_64;
@@ -130,8 +131,63 @@ double SimpleMonteCarlo::computeMT()
 	mean *= exp(-r_ * Expiry_);
 	return mean;
 }
+double SimpleMonteCarlo::CallAnalytic(double Spot, double Strike, double r, double Vol, double Expiry)
+{
+	double d_plus = (std::log(Spot / Strike) + (r + 0.5 * std::pow(Vol, 2)) * Expiry) / (Vol * std::sqrt(Expiry));
+	double d_minus = d_plus - Vol * std::sqrt(Expiry);
+	double price = Spot * NonRandom::N(d_plus) - Strike * std::exp(-r * Expiry) * NonRandom::N(d_minus);
+	return price;
+}
+double norm_pdf(const double x) {
+	return 0.3989422804014337 * std::exp(-0.5 * x * x);
+}
 
+double SimpleMonteCarlo::VegaAnalytic(double Spot, double Strike, double r, double Vol, double Expiry)
+{
+	double d1 = (std::log(Spot / Strike) + (r + 0.5 * Vol * Vol) * Expiry) / (Vol * std::sqrt(Expiry));
+	return Spot * std::sqrt(Expiry) * norm_pdf(d1);
+}
+void SimpleMonteCarlo::VectorForVolImpli(double Spot, double Strike, double r, double Vol, double Expiry, std::pair<double, double> &vect)
+{
+	double d_plus = (std::log(Spot / Strike) + (r + 0.5 * std::pow(Vol, 2)) * Expiry) / (Vol * std::sqrt(Expiry));
+	double d_minus = d_plus - Vol * std::sqrt(Expiry);
+	vect.first = Spot * NonRandom::N(d_plus) - Strike * std::exp(-r * Expiry) * NonRandom::N(d_minus);;
+	vect.second = Spot * std::sqrt(Expiry) * norm_pdf(d_plus);;
+}
+double SimpleMonteCarlo::VolImpliNewton(double Spot, double Strike, double r, double VolDep, double Expiry, double callValue)
+{
+	const double tol = 0.0001;
+	const int maxIterations = 100;
+	int currentIteration = 0;
 
+	double diff = std::numeric_limits<double>::max();
+	std::pair<double, double> vect;
+	VolDep = 2 * std::abs(std::log(Spot / Strike) + r * Expiry) / Expiry;
+	double newVol = VolDep;
+	while (diff > tol && currentIteration < maxIterations)
+	{
+		VectorForVolImpli(Spot, Strike, r, newVol, Expiry, vect);
+		double price = vect.first;
+		double vega = vect.second;
+
+		if (std::abs(vega) < 1e-10)
+		{
+			throw std::runtime_error("Vega is too close to zero. Newton method may not converge.");
+		}
+
+		diff = std::abs(price - callValue);
+		newVol = newVol - (price - callValue) / vega;
+		newVol = std::max(0.001, std::min(newVol, 5.0));
+		currentIteration++;
+	}
+
+	if (currentIteration == maxIterations)
+	{
+		throw std::runtime_error("Newton method did not converge.");
+	}
+
+	return newVol;
+}
 double SimpleMonteCarlo::computeMTPath()
 {
 	double variance = Vol_ * Vol_ * Expiry_;
@@ -429,6 +485,41 @@ double SimpleMonteCarlo::getRho()
 double SimpleMonteCarlo::getTheta()
 {
 	return this->theta;
+}
+#include <boost/math/distributions/normal.hpp>
+boost::math::normal_distribution<> norm_dist;
+double SimpleMonteCarlo::d1() const {
+	return (log(this->Spot_ / this->strike_) + (this->r_ + 0.5 * this->Vol_ * this->Vol_) * this->Expiry_) / (this->Vol_ * sqrt(this->Expiry_));
+}
+
+double SimpleMonteCarlo::d2() const {
+	return d1() - this->Vol_ * sqrt(this->Expiry_);
+}
+double SimpleMonteCarlo::deltaA() const {
+	return boost::math::cdf(norm_dist, d1());
+}
+
+double SimpleMonteCarlo::gammaA() const {
+	return boost::math::pdf(norm_dist, d1()) / (this->Spot_ * this->Vol_ * sqrt(this->Expiry_));
+}
+
+double SimpleMonteCarlo::rhoA() const {
+	return this->strike_ * this->Expiry_ * exp(-this->r_ * this->Expiry_) * boost::math::cdf(norm_dist, d2());
+}
+
+double SimpleMonteCarlo::thetaA() const {
+	double part1 = -(this->Spot_ * boost::math::pdf(norm_dist, d1()) * this->Vol_) / (2 * sqrt(this->Expiry_));
+	double part2 = this->r_ * this->strike_ * exp(-this->r_ * this->Expiry_) * boost::math::cdf(norm_dist, d2());
+	return part1 - part2;
+}
+void SimpleMonteCarlo::getAllGreeks(std::vector<double> &results)
+{
+	this->strike_ = thePayOff_->getStrike();
+	results[0] = deltaA();
+	results[1] = gammaA();
+	results[2] = thetaA();
+	results[3] = rhoA();
+	
 }
 void SimpleMonteCarlo::generateSeeds_()
 {

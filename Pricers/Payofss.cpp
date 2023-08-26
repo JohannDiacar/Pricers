@@ -99,6 +99,10 @@ utils::OptionType Payoffs::getOptionsType() const
 {
 	return this->TheOptionsType;
 }
+double Payoffs::getStrike() const
+{
+	return this->strike;
+}
 VanillaPayOff::VanillaPayOff()
 {
 	utils::OptionType type_payoffs = utils::OptionType::Call;

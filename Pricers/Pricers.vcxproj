@@ -143,6 +143,7 @@
     <ClInclude Include="BrownianMotion.h" />
     <ClInclude Include="framework.h" />
     <ClInclude Include="Heston.h" />
+    <ClInclude Include="HSAS.h" />
     <ClInclude Include="Payoffs.h" />
     <ClInclude Include="Payofss.h" />
     <ClInclude Include="pch.h" />
@@ -152,6 +153,7 @@
     <ClCompile Include="BrownianMotion.cpp" />
     <ClCompile Include="dllmain.cpp" />
     <ClCompile Include="Heston.cpp" />
+    <ClCompile Include="HSAS.cpp" />
     <ClCompile Include="Payofss.cpp" />
     <ClCompile Include="pch.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>

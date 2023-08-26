@@ -24,7 +24,7 @@
 
 #include "gausslobattointegral.hpp"
 #include <algorithm>
-
+#include <vector>
 namespace QuantLib {
 
     const double GaussLobattoIntegral::alpha_ = std::sqrt(2.0/3.0); 
@@ -52,7 +52,6 @@ namespace QuantLib {
         increaseNumberOfEvaluations(2);
         return adaptivGaussLobattoStep(f, a, b, f(a), f(b), calcAbsTolerance);
     }
-
     double GaussLobattoIntegral::calculateAbsTolerance(
                                      const ext::function<double (double)>& f, 
                                      double a, double b) const {

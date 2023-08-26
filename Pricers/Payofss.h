@@ -78,6 +78,7 @@ class Payoffs
 		void setGlobalFlooredCliquetSpot(double S0, double S1);
 		void setGlobalFlooredCliquetSpot(double S_new);
 		utils::OptionType getOptionsType() const;
+		double getStrike() const;
 	protected:
 		double strike;
 		double premium;

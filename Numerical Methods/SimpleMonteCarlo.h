@@ -38,6 +38,17 @@ class SimpleMonteCarlo
 		void setSpot(const double spot);
 		void resetRandom();
 
+		double CallAnalytic(double Spot, double Strike, double r, double Vol, double Expiry);
+		double VegaAnalytic(double Spot, double Strike, double r, double Vol, double Expiry);
+		void VectorForVolImpli(double Spot, double Strike, double r, double Vol, double Expiry, std::pair<double, double> &vect);
+		double VolImpliNewton(double Spot, double Strike, double r, double VolDep, double Expiry, double callValue);
+		double d1() const;
+		double d2() const;
+		double deltaA() const;
+		double gammaA() const;
+		double rhoA() const;
+		double thetaA() const;
+		void getAllGreeks(std::vector<double> &results);
 	protected:
 		double delta;
 		double gamma;		
@@ -45,7 +56,7 @@ class SimpleMonteCarlo
 		double rho;
 		double theta;
 	private:
-		
+		double strike_;
 		Payoffs *thePayOff_;
 		double Expiry_;
 		double Spot_;

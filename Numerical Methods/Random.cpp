@@ -67,7 +67,7 @@ NonRandom::NonRandom()
 {
 }
 
-double NonRandom::N(double x)
+double NonRandom::N(const double x)
 {
 	//Normal distribution cumulative density function
 	return 0.5 * (1.0 + std::erf(x / std::sqrt(2.0)));
