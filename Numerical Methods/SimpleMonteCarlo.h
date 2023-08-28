@@ -8,19 +8,22 @@ class SimpleMonteCarlo
 {
 	public:
 		SimpleMonteCarlo();
-		SimpleMonteCarlo(const Payoffs& thePayOff, double Expiry, double Spot, double Vol, double r, unsigned long NumberOfPaths);
+		SimpleMonteCarlo(Payoffs* thePayOff, double Expiry, double Spot, double Vol, double r, unsigned long NumberOfPaths);
 		~SimpleMonteCarlo();
 		std::vector<double> operator()(int seed);
 		
 		double compute();
+		double computeMT();
+		double computeMTPath();
+		double computePath();
 		double computePriceAsync();//not working
 
-		double Gamma( double h);
-		double Delta(double h);
-		void DeltaAndGamma(double h);
-		void Vega(double h);
-		void Rho(double h);
-		void Theta(double h);
+		double Gamma( double h, bool path = false);
+		double Delta(double h, bool path = false);
+		void DeltaAndGamma(double h, bool path = false);
+		void Vega(double h, bool path = false);
+		void Rho(double h, bool path = false);
+		void Theta(double h, bool path = false);
 
 		double getGamma();
 		double getDelta();
@@ -33,8 +36,19 @@ class SimpleMonteCarlo
 		void setVol(double vol);
 		void setR(double h);
 		void setSpot(const double spot);
+		void resetRandom();
 
-
+		double CallAnalytic(double Spot, double Strike, double r, double Vol, double Expiry);
+		double VegaAnalytic(double Spot, double Strike, double r, double Vol, double Expiry);
+		void VectorForVolImpli(double Spot, double Strike, double r, double Vol, double Expiry, std::pair<double, double> &vect);
+		double VolImpliNewton(double Spot, double Strike, double r, double VolDep, double Expiry, double callValue);
+		double d1() const;
+		double d2() const;
+		double deltaA() const;
+		double gammaA() const;
+		double rhoA() const;
+		double thetaA() const;
+		void getAllGreeks(std::vector<double> &results);
 	protected:
 		double delta;
 		double gamma;		
@@ -42,8 +56,8 @@ class SimpleMonteCarlo
 		double rho;
 		double theta;
 	private:
-		
-		const Payoffs& thePayOff_;
+		double strike_;
+		Payoffs *thePayOff_;
 		double Expiry_;
 		double Spot_;
 		double Vol_;

@@ -112,6 +112,7 @@
       <ConformanceMode>true</ConformanceMode>
       <PrecompiledHeader>Use</PrecompiledHeader>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
+      <AdditionalIncludeDirectories>$(ProjectDir)vcpkg\buildtrees\gsl\x64-windows-rel;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -142,15 +143,19 @@
     <ClInclude Include="BrownianMotion.h" />
     <ClInclude Include="framework.h" />
     <ClInclude Include="Heston.h" />
+    <ClInclude Include="HSAS.h" />
+    <ClInclude Include="Matrix.h" />
     <ClInclude Include="Payoffs.h" />
     <ClInclude Include="Payofss.h" />
     <ClInclude Include="pch.h" />
+    <ClInclude Include="Simplex.h" />
     <ClInclude Include="test.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="BrownianMotion.cpp" />
     <ClCompile Include="dllmain.cpp" />
     <ClCompile Include="Heston.cpp" />
+    <ClCompile Include="HSAS.cpp" />
     <ClCompile Include="Payofss.cpp" />
     <ClCompile Include="pch.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
@@ -158,19 +163,36 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
     </ClCompile>
+    <ClCompile Include="Simplex.cpp" />
     <ClCompile Include="test.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
   </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\MarketData\MarketData.vcxproj">
+      <Project>{b831b2b7-dc53-4802-a804-ae23d32d3dd1}</Project>
+    </ProjectReference>
+    <ProjectReference Include="..\Numerical Methods\Numerical Methods.vcxproj">
+      <Project>{8e6ac67a-98d1-478c-a588-fc5081605855}</Project>
+    </ProjectReference>
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
     <Import Project="..\packages\boost.1.81.0\build\boost.targets" Condition="Exists('..\packages\boost.1.81.0\build\boost.targets')" />
+    <Import Project="..\..\xlw-master\xlw-master\xlw\DevAndTestProject\packages\Eigen.3.3.3\build\native\Eigen.targets" Condition="Exists('..\..\xlw-master\xlw-master\xlw\DevAndTestProject\packages\Eigen.3.3.3\build\native\Eigen.targets')" />
+    <Import Project="..\..\xlw-master\xlw-master\xlw\DevAndTestProject\packages\boost.1.82.0\build\boost.targets" Condition="Exists('..\..\xlw-master\xlw-master\xlw\DevAndTestProject\packages\boost.1.82.0\build\boost.targets')" />
+    <Import Project="..\..\xlw-master\xlw-master\xlw\DevAndTestProject\packages\boost_math_tr1-vc143.1.82.0\build\boost_math_tr1-vc143.targets" Condition="Exists('..\..\xlw-master\xlw-master\xlw\DevAndTestProject\packages\boost_math_tr1-vc143.1.82.0\build\boost_math_tr1-vc143.targets')" />
+    <Import Project="..\..\xlw-master\xlw-master\xlw\DevAndTestProject\packages\Microsoft.Gsl.0.1.2.0\build\native\Microsoft.Gsl.targets" Condition="Exists('..\..\xlw-master\xlw-master\xlw\DevAndTestProject\packages\Microsoft.Gsl.0.1.2.0\build\native\Microsoft.Gsl.targets')" />
   </ImportGroup>
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
     <PropertyGroup>
       <ErrorText>Ce projet fait référence à des packages NuGet qui sont manquants sur cet ordinateur. Utilisez l'option de restauration des packages NuGet pour les télécharger. Pour plus d'informations, consultez http://go.microsoft.com/fwlink/?LinkID=322105. Le fichier manquant est : {0}.</ErrorText>
     </PropertyGroup>
     <Error Condition="!Exists('..\packages\boost.1.81.0\build\boost.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\boost.1.81.0\build\boost.targets'))" />
+    <Error Condition="!Exists('..\..\xlw-master\xlw-master\xlw\DevAndTestProject\packages\Eigen.3.3.3\build\native\Eigen.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\xlw-master\xlw-master\xlw\DevAndTestProject\packages\Eigen.3.3.3\build\native\Eigen.targets'))" />
+    <Error Condition="!Exists('..\..\xlw-master\xlw-master\xlw\DevAndTestProject\packages\boost.1.82.0\build\boost.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\xlw-master\xlw-master\xlw\DevAndTestProject\packages\boost.1.82.0\build\boost.targets'))" />
+    <Error Condition="!Exists('..\..\xlw-master\xlw-master\xlw\DevAndTestProject\packages\boost_math_tr1-vc143.1.82.0\build\boost_math_tr1-vc143.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\xlw-master\xlw-master\xlw\DevAndTestProject\packages\boost_math_tr1-vc143.1.82.0\build\boost_math_tr1-vc143.targets'))" />
+    <Error Condition="!Exists('..\..\xlw-master\xlw-master\xlw\DevAndTestProject\packages\Microsoft.Gsl.0.1.2.0\build\native\Microsoft.Gsl.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\xlw-master\xlw-master\xlw\DevAndTestProject\packages\Microsoft.Gsl.0.1.2.0\build\native\Microsoft.Gsl.targets'))" />
   </Target>
 </Project>

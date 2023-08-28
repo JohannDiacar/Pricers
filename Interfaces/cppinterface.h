@@ -78,7 +78,6 @@ PriceAndGreeksH(double Expiry,
                 double Strike,
                 std::string type,
                 double Spot,
-                double Vol,
                 double r,
                 unsigned long NumberOfPaths,
                 double premium,
@@ -87,7 +86,8 @@ PriceAndGreeksH(double Expiry,
                 double eta,
                 double rho,
                 double kappa,
-                double v0
+                double v0,
+                unsigned int Nmc
 );
 CellMatrix
 PriceAndGreeksHVarRed(
@@ -95,7 +95,6 @@ PriceAndGreeksHVarRed(
                 double Strike,
                 std::string type,
                 double Spot,
-                double Vol,
                 double r,
                 unsigned long NumberOfPaths,
                 double premium,
@@ -104,6 +103,7 @@ PriceAndGreeksHVarRed(
                 double eta,
                 double rho,
                 double kappa,
-                double v0
+                double v0,
+                unsigned int Nmc
 );
 #endif

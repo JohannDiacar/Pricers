@@ -13,11 +13,14 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
+    <Filter Include="Fichiers sources\Integration">
+      <UniqueIdentifier>{af0beaf4-96a7-4964-8791-99f4032e5432}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Fichiers d%27en-tête\integrals">
+      <UniqueIdentifier>{3b770d3c-fc8f-4c78-a1ad-a8b5bc48ed1c}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="framework.h">
-      <Filter>Fichiers d%27en-tête</Filter>
-    </ClInclude>
     <ClInclude Include="pch.h">
       <Filter>Fichiers d%27en-tête</Filter>
     </ClInclude>
@@ -26,6 +29,105 @@
     </ClInclude>
     <ClInclude Include="Random.h">
       <Filter>Fichiers d%27en-tête</Filter>
+    </ClInclude>
+    <ClInclude Include="Norms.h">
+      <Filter>Fichiers d%27en-tête</Filter>
+    </ClInclude>
+    <ClInclude Include="integrals\all.hpp">
+      <Filter>Fichiers d%27en-tête\integrals</Filter>
+    </ClInclude>
+    <ClInclude Include="integrals\discreteintegrals.hpp">
+      <Filter>Fichiers d%27en-tête\integrals</Filter>
+    </ClInclude>
+    <ClInclude Include="integrals\exponentialintegrals.hpp">
+      <Filter>Fichiers d%27en-tête\integrals</Filter>
+    </ClInclude>
+    <ClInclude Include="integrals\filonintegral.hpp">
+      <Filter>Fichiers d%27en-tête\integrals</Filter>
+    </ClInclude>
+    <ClInclude Include="framework.h">
+      <Filter>Fichiers d%27en-tête\integrals</Filter>
+    </ClInclude>
+    <ClInclude Include="integrals\gaussianorthogonalpolynomial.hpp">
+      <Filter>Fichiers d%27en-tête\integrals</Filter>
+    </ClInclude>
+    <ClInclude Include="integrals\gaussianquadratures.hpp">
+      <Filter>Fichiers d%27en-tête\integrals</Filter>
+    </ClInclude>
+    <ClInclude Include="integrals\gausslaguerrecosinepolynomial.hpp">
+      <Filter>Fichiers d%27en-tête\integrals</Filter>
+    </ClInclude>
+    <ClInclude Include="integrals\gausslobattointegral.hpp">
+      <Filter>Fichiers d%27en-tête\integrals</Filter>
+    </ClInclude>
+    <ClInclude Include="integrals\integral.hpp">
+      <Filter>Fichiers d%27en-tête\integrals</Filter>
+    </ClInclude>
+    <ClInclude Include="integrals\kronrodintegral.hpp">
+      <Filter>Fichiers d%27en-tête\integrals</Filter>
+    </ClInclude>
+    <ClInclude Include="integrals\momentbasedgaussianpolynomial.hpp">
+      <Filter>Fichiers d%27en-tête\integrals</Filter>
+    </ClInclude>
+    <ClInclude Include="integrals\simpsonintegral.hpp">
+      <Filter>Fichiers d%27en-tête\integrals</Filter>
+    </ClInclude>
+    <ClInclude Include="integrals\tanhsinhintegral.hpp">
+      <Filter>Fichiers d%27en-tête\integrals</Filter>
+    </ClInclude>
+    <ClInclude Include="integrals\trapezoidintegral.hpp">
+      <Filter>Fichiers d%27en-tête\integrals</Filter>
+    </ClInclude>
+    <ClInclude Include="integrals\twodimensionalintegral.hpp">
+      <Filter>Fichiers d%27en-tête\integrals</Filter>
+    </ClInclude>
+    <ClInclude Include="integrals\segmentintegral.hpp">
+      <Filter>Fichiers d%27en-tête\integrals</Filter>
+    </ClInclude>
+    <ClInclude Include="integrals\functional.hpp">
+      <Filter>Fichiers d%27en-tête\integrals</Filter>
+    </ClInclude>
+    <ClInclude Include="integrals\types.hpp">
+      <Filter>Fichiers d%27en-tête\integrals</Filter>
+    </ClInclude>
+    <ClInclude Include="integrals\array.hpp">
+      <Filter>Fichiers d%27en-tête\integrals</Filter>
+    </ClInclude>
+    <ClInclude Include="integrals\null.hpp">
+      <Filter>Fichiers d%27en-tête\integrals</Filter>
+    </ClInclude>
+    <ClInclude Include="integrals\errors.hpp">
+      <Filter>Fichiers d%27en-tête\integrals</Filter>
+    </ClInclude>
+    <ClInclude Include="integrals\shared_ptr.hpp">
+      <Filter>Fichiers d%27en-tête\integrals</Filter>
+    </ClInclude>
+    <ClInclude Include="integrals\qldefines.hpp">
+      <Filter>Fichiers d%27en-tête\integrals</Filter>
+    </ClInclude>
+    <ClInclude Include="integrals\config.msvc.hpp">
+      <Filter>Fichiers d%27en-tête\integrals</Filter>
+    </ClInclude>
+    <ClInclude Include="integrals\comparison.hpp">
+      <Filter>Fichiers d%27en-tête\integrals</Filter>
+    </ClInclude>
+    <ClInclude Include="integrals\gammadistribution.hpp">
+      <Filter>Fichiers d%27en-tête\integrals</Filter>
+    </ClInclude>
+    <ClInclude Include="integrals\symmetricschurdecomposition.hpp">
+      <Filter>Fichiers d%27en-tête\integrals</Filter>
+    </ClInclude>
+    <ClInclude Include="integrals\tqreigendecomposition.hpp">
+      <Filter>Fichiers d%27en-tête\integrals</Filter>
+    </ClInclude>
+    <ClInclude Include="integrals\matrix.hpp">
+      <Filter>Fichiers d%27en-tête\integrals</Filter>
+    </ClInclude>
+    <ClInclude Include="integrals\steppingiterator.hpp">
+      <Filter>Fichiers d%27en-tête\integrals</Filter>
+    </ClInclude>
+    <ClInclude Include="integrals\GaussLobatto.h">
+      <Filter>Fichiers d%27en-tête\integrals</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -41,8 +143,57 @@
     <ClCompile Include="Random.cpp">
       <Filter>Fichiers sources</Filter>
     </ClCompile>
+    <ClCompile Include="Norms.cpp">
+      <Filter>Fichiers sources</Filter>
+    </ClCompile>
+    <ClCompile Include="integrals\exponentialintegrals.cpp">
+      <Filter>Fichiers sources\Integration</Filter>
+    </ClCompile>
+    <ClCompile Include="integrals\filonintegral.cpp">
+      <Filter>Fichiers sources\Integration</Filter>
+    </ClCompile>
+    <ClCompile Include="integrals\gaussianorthogonalpolynomial.cpp">
+      <Filter>Fichiers sources\Integration</Filter>
+    </ClCompile>
+    <ClCompile Include="integrals\gaussianquadratures.cpp">
+      <Filter>Fichiers sources\Integration</Filter>
+    </ClCompile>
+    <ClCompile Include="integrals\gausslobattointegral.cpp">
+      <Filter>Fichiers sources\Integration</Filter>
+    </ClCompile>
+    <ClCompile Include="integrals\integral.cpp">
+      <Filter>Fichiers sources\Integration</Filter>
+    </ClCompile>
+    <ClCompile Include="integrals\kronrodintegral.cpp">
+      <Filter>Fichiers sources\Integration</Filter>
+    </ClCompile>
+    <ClCompile Include="integrals\discreteintegrals.cpp">
+      <Filter>Fichiers sources\Integration</Filter>
+    </ClCompile>
+    <ClCompile Include="integrals\segmentintegral.cpp">
+      <Filter>Fichiers sources\Integration</Filter>
+    </ClCompile>
+    <ClCompile Include="integrals\errors.cpp">
+      <Filter>Fichiers sources\Integration</Filter>
+    </ClCompile>
+    <ClCompile Include="integrals\gammadistribution.cpp">
+      <Filter>Fichiers sources\Integration</Filter>
+    </ClCompile>
+    <ClCompile Include="integrals\symmetricschurdecomposition.cpp">
+      <Filter>Fichiers sources\Integration</Filter>
+    </ClCompile>
+    <ClCompile Include="integrals\tqreigendecomposition.cpp">
+      <Filter>Fichiers sources\Integration</Filter>
+    </ClCompile>
+    <ClCompile Include="integrals\matrix.cpp">
+      <Filter>Fichiers sources\Integration</Filter>
+    </ClCompile>
+    <ClCompile Include="integrals\GaussLobatto.cpp">
+      <Filter>Fichiers sources\Integration</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
+    <None Include="integrals\Makefile.am" />
     <None Include="packages.config" />
   </ItemGroup>
 </Project>
