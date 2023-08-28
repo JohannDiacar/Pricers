@@ -2490,6 +2490,55 @@ double Heston::PrixCui(double K, double tau) {
 
 	return prix(integral_value_u_i, integral_value_u);
 }
+double Heston::PrixCuiVect(std::vector<double> vect, double K, double tau) {		
+	std::complex<double> i(0, 1);
+	//For Heston the position of x0 is the following : x0[0] = kappa, x0[1] = theta, x0[2] = eta, x0[3] = rho, x0[4] = v0
+
+	this->kappa_ = vect[0];
+	this->theta_ = vect[1];
+	this->eta = vect[2];
+	this->rho_ = vect[3];
+	this->v0_ = vect[4];
+
+	auto integrandCuiUI = [&](double u)
+	{
+		std::complex<double> term1 = std::exp(-i * u * std::log(K / this->Spot_));
+		std::complex<double> term2 = HestonCharacteristicCui(u - i, K, tau);
+		return std::real(term1 * term2 / (i * u));
+
+	};
+	auto integrandCuiU = [&](double u)
+	{
+		std::complex<double> term1 = std::exp(-i * u * std::log(K / this->Spot_));
+		std::complex<double> term2 = HestonCharacteristicCui(u, K, tau);
+		return std::real(term1 * term2 / (i * u));
+	};
+	auto integrand_u_i = [&](double u) {
+		return integrandCuiUI(u);
+	};
+	auto integrand_u = [&](double u) {
+		return integrandCuiU(u);
+	};
+	auto prix = [&](double integrand_u_i, double integrand_u)
+	{
+		double term_1 = 0.5 * (this->Spot_ * std::exp(-this->q_ * tau) - K * std::exp(-this->r_ * tau));
+		double term_2 = (this->Spot_ * integrand_u_i);
+		double term_3 = K * integrand_u;
+
+		return term_1 + (std::exp(-this->r_ * tau) / M_PI) * (term_2 - term_3);
+	};
+
+	double lower_limit = 1e-6;
+	double upper_limit = 300;
+	QuantLib::GaussLobattoIntegral gauss(15000,
+		1000,
+		1e-7,
+		false);
+	double integral_value_u_i = gauss.integrate(integrand_u_i, lower_limit, upper_limit);//boost::math::quadrature::trapezoidal(integrand_u_i, lower_limit, upper_limit);
+	double integral_value_u = gauss.integrate(integrand_u, lower_limit, upper_limit);//boost::math::quadrature::trapezoidal(integrand_u, lower_limit, upper_limit);
+
+	return prix(integral_value_u_i, integral_value_u);
+}
 double Heston::PrixCui2(double K, double tau, double lower_limit, double upper_limit, double max_rep, double precision) {		
 	std::complex<double> i(0, 1);
 

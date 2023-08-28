@@ -136,6 +136,7 @@ class Heston
 
 		double PrixSchoutens(double K, double tau);
 		double PrixCui(double K, double tau);
+		double PrixCuiVect(std::vector<double> vect,double K, double tau);
 		double PrixCui2(double K, double tau, double lower_limit, double upper_limit, double max_rep, double precision);
 		std::complex<double> HestonCharacteristicSchoutens(std::complex<double> u, double K, double tau);
 		std::complex<double> HestonCharacteristicDelBanoRollin(std::complex<double> u, double K, double tau);

@@ -39,6 +39,12 @@
     <ClInclude Include="HSAS.h">
       <Filter>Fichiers d%27en-tête</Filter>
     </ClInclude>
+    <ClInclude Include="Matrix.h">
+      <Filter>Fichiers d%27en-tête</Filter>
+    </ClInclude>
+    <ClInclude Include="Simplex.h">
+      <Filter>Fichiers d%27en-tête</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="dllmain.cpp">
@@ -60,6 +66,9 @@
       <Filter>Fichiers sources</Filter>
     </ClCompile>
     <ClCompile Include="HSAS.cpp">
+      <Filter>Fichiers sources</Filter>
+    </ClCompile>
+    <ClCompile Include="Simplex.cpp">
       <Filter>Fichiers sources</Filter>
     </ClCompile>
   </ItemGroup>

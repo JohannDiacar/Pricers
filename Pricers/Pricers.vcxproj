@@ -144,9 +144,11 @@
     <ClInclude Include="framework.h" />
     <ClInclude Include="Heston.h" />
     <ClInclude Include="HSAS.h" />
+    <ClInclude Include="Matrix.h" />
     <ClInclude Include="Payoffs.h" />
     <ClInclude Include="Payofss.h" />
     <ClInclude Include="pch.h" />
+    <ClInclude Include="Simplex.h" />
     <ClInclude Include="test.h" />
   </ItemGroup>
   <ItemGroup>
@@ -161,6 +163,7 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
     </ClCompile>
+    <ClCompile Include="Simplex.cpp" />
     <ClCompile Include="test.cpp" />
   </ItemGroup>
   <ItemGroup>
